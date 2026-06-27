@@ -1,4 +1,5 @@
 // AI Content Generator — Vite SPA, calls AI provider directly
+// Optimized for X (Twitter) Algorithm 2026 — Reply-driven viral strategy
 
 import { callAI, PROVIDER_PRESETS } from './providers';
 import { getActiveApiKey, getSetting } from './store';
@@ -9,6 +10,7 @@ export interface GeneratedIdea {
   emoji_count: number;
   tone: string;
   language: string;
+  hook_type?: string;
 }
 
 // ---- Paragraph Spacing ----
@@ -62,75 +64,117 @@ function postProcess(text: string): string {
   return ensureParagraphSpacing(t);
 }
 
-// ---- Templates ----
+// ============================================================
+//  PROMPT ENGINE v4 — X Algorithm 2026 Optimized
+//  Key signals: Reply-chains (+75), Dwell time (+10),
+//  Early velocity (30min), Conversation quality
+//  Penalized: 3+ hashtags, links in main tweet, engagement bait
+// ============================================================
 
-const TOPIC_ICONS: Record<string, string> = {
-  teknologi: '💻', bisnis: '💼', motivasi: '✨', crypto: '₿', AI: '🤖', produktivitas: '⏰', startup: '🚀', lifehack: '💡', general: '🎲',
-};
+const VIRAL_HOOK_STRATEGY = `
+🎯 X ALGORITHM 2026 — VIRAL HOOK STRATEGY:
 
-// ---- NATURAL TYPO PRESET (all providers) ----
-// Biar AI nulis kayak orang Indo beneran — ada typo sedikiiit
+Kamu HARUS mulai tweet dengan salah satu dari 8 tipe hook viral ini (pilih secara acak, jangan monoton):
 
-const TYPO_RULES = `
-⚠️ NATURAL: MASUKKIN 1-2 KATA GAUL/SLANG ALAMI per paragraf. Contoh kata gaul:
-- "goklok", "bnget", "gue", "lu", "anjay", "bacot", "ngpain", "gitu", "yaelah", "wkwk", "njir"
-- Singkatan natural: "yg", "gak", "dgn", "krn", "ato", "tp", "dr", "pdhl"
-JANGAN OVERDO — maks 2-3 slang/gaul per TWEET. Harus masih enak dibaca & ga dipaksa.
-Kalimat pertama harus BERSIH (ga ada slang) biar hook-nya kuat.
+1. HOT TAKE: Opini kontroversial yang bikin orang berdebat
+   Contoh: "🔥 Stop glorifying hustle culture. It's literally killing your creativity."
+   
+2. SURPRISING STAT: Data mengejutkan yang bikin orang bookmark
+   Contoh: "📊 93% startup gagal bukan karena produk jelek, tapi karena founder-nya gak bisa jualan."
+
+3. RELATABLE OBSERVATION: Observasi kecil yang bikin orang "wah gue banget"
+   Contoh: "😭 Kenapa setiap coffee shop sekarang playlist-nya tiga lagu itu mulu sih"
+
+4. CONTRARIAN TAKE: Lawan arus opini mainstream
+   Contoh: "🤯 Unpopular opinion: kuliah 4 tahun itu scam terbesar gen Z."
+
+5. PERSONAL CONFESSION: Pengakuan personal yang vulnerable
+   Contoh: "🥲 Jujur, gue dulu income $0 selama 8 bulan pertama bikin startup."
+
+6. QUESTION HOOK: Pertanyaan yang memancing reply
+   Contoh: "🤔 Genuine question: kalo AI udah bisa ngoding, frontend dev ngapain 5 tahun lagi?"
+
+7. BEFORE/AFTER: Transformasi dramatis
+   Contoh: "💀 2023: gue hopeless, burnout, mau quit. 2025: $15k/month solo founder."
+
+8. RANT / MINI-ROAST: Keluhan relatable yang entertaining
+   Contoh: "😤 Hiring itu skill tersendiri. Dan 90% HR di Indonesia GAK PUNYA skill itu."
+`;
+
+const ALGO_REPLY_BAIT = `
+💬 REPLY BAIT STRATEGY — X Algorithm 2026:
+
+X memberi bobot reply +75 (150x dari like +0.5). Jadi SETIAP tweet HARUS memancing reply!
+
+CARA MEMANCING REPLY:
+- Akhiri tweet dengan PERTANYAAN TERBUKA yang gampang dijawab
+  "Ada yang pernah ngalamin juga?", "Menurut kalian gimana?", "Setuju gak?"
+- Sisakan RUANG KONTROVERSI — jangan terlalu "selesai", biarkan orang menambahkan
+- Pakai CALL-TO-REPLY natural di paragraf terakhir
+  "Drop your take di reply 👇", "Spill pengalaman lu di bawah"
+- BUAT LISTICLE pendek: "Top 3 hal yang..." — orang akan menambahkan #4, #5
+- JANGAN tutup dengan kesimpulan final — biarkan TERBUKA untuk debat
 `;
 
 const EMOJI_RULES = `
-🎯 WAJIB EMOJI + EMOTION — INI PALING PENTING:
-- AWAL TWEET: WAJIB mulai dengan 1-2 emoji (contoh: "🔥", "🤯", "😭", "💀", "👀", "🤔", "😤", "😂", "🚀")
-- AWAL PARAGRAF: SETIAP paragraf HARUS diawali emoji yang berbeda
-- EMOTION EMOJI: WAJIB pakai emoji ekspresi/emotion di dalam teks (😂😭😤🤯🤔😱💀🔥👀🤝)
-- TOTAL: 5-8 emoji per tweet (campuran: 3-4 emotion + 2-3 topik/simbol)
-- JANGAN cuma emoji simbol doang — harus ada emoji yang nunjukin PERASAAN
-- Contoh emotion emoji bagus: "😭", "😤", "🤯", "😂", "💀", "😱", "🤔", "😏", "🥲", "😩"
-- Jangan pakai emoji basi: ❌ "✅", "❌", "👉", "👇", "‼️", "💯"
-`;
+🎯 EMOJI + EMOTION MANDATORY — WAJIB 100% (X 2026 Algorithm):
 
-const EYD_RULES = `
-⚠️ EYD TITIK & KOMA: WAJIB pakai tanda baca yang benar!
-- Setiap akhir kalimat HARUS ada titik (.)
-- Koma (,) WAJIB dipakai untuk jeda natural, pemisah klausa, setelah kata sambung ("nah,", "jadi,", "padahal,")
-- JANGAN kalimat panjang tanpa koma — pecah dengan koma biar ritme enak
-- Contoh benar: "Gue udah coba, hasilnya lumayan. Tapi ya gitu, masih ada kurangnya."
-`;
-
-// ---- EMOJI MANDATORY RULES ----
-// Diterapkan ke SEMUA model & SEMUA fungsi generate
-
-const EMOJI_RULES = `
-🎯 EMOJI + EMOTION MANDATORY — WAJIB 100%:
-- Karakter PERTAMA dari SELURUH tweet HARUS emoji (sebelum kata apapun)
-- AWAL SETIAP PARAGRAF HARUS emoji (setelah line break, karakter pertama = emoji)
-- Minimal 5-7 emoji per tweet, tersebar natural di dalam teks
-- WAJIB CAMPUR: 3-4 emoji EMOTION/EKSPRESI + 2-3 emoji simbol
-- Emoji EMOTION yang WAJIB dipakai: 😂😭😤🤯🤔😱💀🔥😏🥲😩👀
-- Emoji harus RELEVAN dengan isi:
-  🤔 untuk pertanyaan/bingung, 💡 untuk insight/ide, 🔥 untuk hot take/semangat
-  😂 untuk lucu, 💀 untuk dark humor/savage, 😭 untuk curhat/sedih
-  😤 untuk kesel/frustrasi, 🤯 untuk mindblown, 👀 untuk perhatian
-  😏 untuk sly/sinis, 🥲 untuk bittersweet, 😩 untuk capek/pasrah
-- JANGAN mulai tweet dengan kata — HARUS emoji dulu
+Algoritma X 2026 menggunakan NLP semantic, bukan hashtag. Emoji justru membantu:
+- Karakter PERTAMA tweet HARUS emoji (stop scroll, naikkan dwell time)
+- AWAL SETIAP PARAGRAF HARUS emoji (visual break = dwell time naik)
+- Minimal 5-7 emoji per tweet, tersebar natural
+- WAJIB CAMPUR: 3-4 emoji EMOTION + 2-3 emoji SIMBOL
+- Emoji EMOTION wajib: 😂😭😤🤯🤔😱💀🔥😏🥲😩👀
+- Emoji HARUS RELEVAN dengan isi:
+  🤔 pertanyaan/bingung, 💡 insight/ide, 🔥 hot take/semangat
+  😂 lucu, 💀 dark humor/savage, 😭 curhat/sedih
+  😤 kesel/frustrasi, 🤯 mindblown, 👀 perhatian
+  😏 sly/sinis, 🥲 bittersweet, 😩 capek/pasrah
 - JANGAN pakai emoji basi: ✅ ❌ 👉 👇 ‼️ 💯
 
 ✅ CONTOH BENAR:
-"🤯 Gila sih, gue baru tau AI bisa bantu nulis se-produktif ini.
+"🤯 Gila sih, gue baru tau AI bisa bantu productivity se-liar ini.
 
-😤 Awalnya gue skeptis bnget, mikirnya paling cuma gimmick doang. Tapi setelah 3 bulan pake beneran, hasilnya bikin melongo.
+😤 Awalnya skeptis bnget. Mikirnya cuma gimmick doang. Tapi 3 bulan pake beneran?
 
-😂 Yang biasanya kerjaan 3 hari, sekarang kelar sejam. Goklok emang teknologi sekarang."
+😂 Kerjaan 3 hari kelar sejam. Goklok emang teknologi sekarang. Ada yang udah nyoba juga?"
 
 ❌ CONTOH SALAH (jangan ditiru):
-"Gue pernah ngerasa otak lo blank pas mau nulis 🤔. Gue juga dulu gitu, bro.
-
+"Gue pernah ngerasa stuck pas mau nulis. Gue juga dulu gitu, bro.
 💡 Masalahnya bukan skill, tapi kebiasaan."
-(KENAPA SALAH: paragraf pertama ga diawali emoji)
+(KENAPA SALAH: paragraf pertama ga diawali emoji, gak ada reply bait di akhir)
 `;
 
-// ---- Generate Single Post ----
+const TYPO_RULES = `
+⚠️ NATURAL — SLANG & GAUL (ID only):
+
+Masukkan 1-2 kata gaul/slang ALAMI per paragraf:
+- "goklok", "bnget", "gue", "lu", "anjay", "bacot", "ngpain", "gitu", "yaelah", "wkwk", "njir"
+- Singkatan natural: "yg", "gak", "dgn", "krn", "ato", "tp", "dr", "pdhl"
+JANGAN OVERDO — maks 2-3 slang per TWEET. Kalimat pertama HARUS BERSIH.
+`;
+
+const EYD_RULES = `
+⚠️ EYD TITIK & KOMA — WAJIB:
+
+- Setiap akhir kalimat HARUS titik (.)
+- Koma (,) WAJIB untuk jeda natural, pemisah klausa, setelah kata sambung
+- JANGAN kalimat panjang tanpa koma — pecah biar ritme enak
+`;
+
+const ALGO_ANTI_PENALTY = `
+🚫 X ALGORITHM 2026 — HAL YANG DIPENALTI (JANGAN LAKUKAN):
+
+❌ JANGAN pakai 3+ hashtag — trigger spam filter, reach turun drastis
+❌ JANGAN taruh link di main tweet — reach turun ~50%. Link taruh di reply
+❌ JANGAN engagement bait blatant: "RT jika setuju", "Like kalau relate", "Tag 3 temen"
+❌ JANGAN mulai dengan kata-kata basi: "Tahukah kamu", "Di era", "Halo semua"
+❌ JANGAN akhiri dengan: "Semoga bermanfaat!", "Sekian.", "Terima kasih!"
+✅ BOLEH 0-1 hashtag branded/nama doang jika sangat perlu
+✅ BOLEH reply bait natural: "menurut lu gimana?" (bukan "RT jika setuju!")
+`;
+
+// ---- Generate Single Post (X 2026 Optimized) ----
 
 export async function generateContent(opts: { topic?: string; language?: string; tone?: string }) {
   const { topic = 'general', language = 'id' } = opts;
@@ -140,37 +184,41 @@ export async function generateContent(opts: { topic?: string; language?: string;
   const langName = language === 'id' ? 'Indonesia' : 'English';
   const langCasual = language === 'id'
     ? 'Bahasa Indonesia NATURAL — kayak ngobrol di tongkrongan. Pakai "gue/aku", slang: "btw", "jujurly", "banget", "sih", "goklok", "bnget". JANGAN FORMAL. Bukan bahasa berita.'
-    : 'Casual conversational English — like DMing a friend. Not textbook.';
+    : 'Casual conversational English — like DMing a friend. Not textbook. Not LinkedIn.';
 
-  const prompt = `Kamu PENULIS TWITTER ASLI — bukan bot. Tulisanmu harus 100% seperti manusia ngetweet natural.
+  const prompt = `Kamu PENULIS TWITTER VIRAL — spesialis X algorithm 2026. Tulisanmu 100% natural seperti manusia beneran, bukan bot.
 
 BUATKAN SATU TWEET — ${langName}.
 TOPIK: ${topic}
 ${langCasual}
 
-❌ ANTI-BOT BLACKLIST:
-Jangan mulai dengan: "Tahukah kamu", "Menariknya", "Di era modern", "Halo semuanya", "Tentu saja"
-Jangan akhiri dengan: "Semoga bermanfaat!", "Terima kasih!", "Salam sukses!", "Sekian."
-Jangan pakai: "menarik untuk dicermati", "patut kita apresiasi", "dapat disimpulkan"
+${VIRAL_HOOK_STRATEGY}
 
-✅ WAJIB:
-- HOOK pembuka natural: pertanyaan, hot take, pengakuan, observasi
-- POV personal: "gue/aku" bukan "kita/para ahli"
-- Kalimat bervariasi: pendek → panjang → pendek
-- 2-3 paragraf dengan LINE BREAK
-- ~50-70 kata per tweet (MINIMAL 50 KATA, jangan pendek)
-- EYD: pakai titik di akhir kalimat, koma untuk jeda
-- Kata sambung: "nah", "jadi gini", "masalahnya", "padahal", "btw"
+${ALGO_REPLY_BAIT}
+
 ${EMOJI_RULES}
+
 ${language === 'id' ? EYD_RULES : ''}
 ${language === 'id' ? TYPO_RULES : ''}
 
-TULIS TWEET-NYA — INGAT: karakter pertama HARUS emoji, setiap paragraf diawali emoji:`;
+${ALGO_ANTI_PENALTY}
+
+✅ FORMAT TWEET YANG BENAR:
+- Hook KUAT di baris pertama (pakai emoji)
+- 2-3 paragraf dengan LINE BREAK
+- Setiap paragraf mulai dengan EMOJI
+- ~70-100 kata (jangan terlalu pendek, dwell time penting)
+- Akhiri dengan PERTANYAAN atau CALL-TO-REPLY natural
+- POV personal: "gue/aku" bukan "kita/para ahli"
+- Kalimat bervariasi: pendek → panjang → pendek
+- EYD: titik di akhir kalimat, koma untuk jeda
+
+TULIS TWEET-NYA SEKARANG:`;
 
   try {
     const result = await callAI({
       provider: key.provider, apiKey: key.api_key, model: key.model,
-      prompt, maxTokens: 600, temperature: 0.8,
+      prompt, maxTokens: 700, temperature: 0.85,
     });
     const content = postProcess(result.content);
     return {
@@ -184,19 +232,24 @@ TULIS TWEET-NYA — INGAT: karakter pertama HARUS emoji, setiap paragraf diawali
   }
 }
 
-// ---- Generate Ideas ----
+// ---- TONE INSTRUCTIONS (X 2026 — reply-driven) ----
 
 const TONE_INSTRUCTION: Record<string, string> = {
-  supportif: `Gaya SUPPORTIF — positif, membangun. Jangan lebay. Tetap kasual.
-EMOJI WAJIB untuk tone ini: 🥲 ✨ 🤝 💪 🌱 💡 😊 🌟
-EMOTION WAJIB: 🥲 (bittersweet), 😊 (hangat), 🤝 (solidaritas)`,
-  debate: `Gaya DEBATE — provokatif intelektual, mengundang diskusi. Contrarian tapi well-reasoned.
-EMOJI WAJIB untuk tone ini: 🤔 🔥 👀 💀 😏 🧠 ⚡ 🎯
-EMOTION WAJIB: 🤔 (mempertanyakan), 😏 (sly/sinis), 💀 (savage)`,
-  'kritik-pedas': `Gaya KRITIK PEDAS — tajam, blak-blakan, roastery tapi SMART. Bukan marah-marah.
-EMOJI WAJIB untuk tone ini: 😤 💀 😭 🤯 😂 🔥 🗿 ☠️
-EMOTION WAJIB: 😤 (kesel), 💀 (dark/savage), 😂 (nyindir), 🤯 (mindblown)`,
+  supportif: `Gaya SUPPORTIF — positif & membangun, tapi tetap ada EDGE biar gak boring.
+Emoji tone: 🥲 ✨ 🤝 💪 🌱 💡 😊 🌟
+Emotion wajib: 🥲 (bittersweet), 😊 (hangat), 🤝 (solidaritas)
+Reply bait: "Ada yang lagi fase ini juga?", "Spill journey lo di reply 👇"`,
+  debate: `Gaya DEBATE — provokatif intelektual, contrarian tapi well-reasoned. Ini format TERKUAT di X 2026 (reply-chain +75).
+Emoji tone: 🤔 🔥 👀 💀 😏 🧠 ⚡ 🎯
+Emotion wajib: 🤔 (mempertanyakan), 😏 (sly/sinis), 💀 (savage)
+Reply bait: "Change my mind.", "Debat di reply, gue tunggu.", "Unpopular opinion, but..."`,
+  'kritik-pedas': `Gaya KRITIK PEDAS — tajam, blak-blakan, roastery tapi SMART. Format ini VIRAL BANGET di 2026 karena memancing reply-chain.
+Emoji tone: 😤 💀 😭 🤯 😂 🔥 🗿 ☠️
+Emotion wajib: 😤 (kesel), 💀 (dark/savage), 😂 (nyindir), 🤯 (mindblown)
+Reply bait: "Siapa yang relate angkat tangan.", "Yang tersinggung berarti kena.", "Kasih argumen lu di reply."`,
 };
+
+// ---- Generate Ideas (X 2026 — multi-variant reply-bait) ----
 
 export async function generateIdeas(opts: { idea: string; language?: string; tone?: string; count?: number }) {
   const { idea, language = 'id', tone = 'supportif', count = 5 } = opts;
@@ -209,41 +262,70 @@ export async function generateIdeas(opts: { idea: string; language?: string; ton
     : 'Casual conversational English, not textbook.';
   const maxCount = Math.min(count, 10);
 
-  const prompt = `Kamu PENULIS TWITTER ASLI — bukan bot. BUATKAN ${maxCount} VARIASI TWEET tentang: "${idea}"
+  const prompt = `Kamu PENULIS TWITTER VIRAL — spesialis X algorithm 2026. BUATKAN ${maxCount} VARIASI TWEET tentang: "${idea}"
 
 BAHASA: ${langName}
 ${langCasual}
+
 ${TONE_INSTRUCTION[tone] || ''}
 
-❌ ANTI-BOT: Jangan mulai dengan "Tahukah kamu", "Di era modern", "Halo semua". Jangan akhiri "Semoga bermanfaat!", "Salam sukses!"
-✅ WAJIB: Personal POV, kalimat bervariasi, 2-3 paragraf, ~50-70 kata
-✅ EYD: titik di akhir kalimat, koma untuk jeda natural
+${VIRAL_HOOK_STRATEGY}
+
+${ALGO_REPLY_BAIT}
+
 ${EMOJI_RULES}
-${language === 'id' ? TYPO_RULES : ''}
+
 ${language === 'id' ? EYD_RULES : ''}
-FORMAT OUTPUT:
+${language === 'id' ? TYPO_RULES : ''}
+
+${ALGO_ANTI_PENALTY}
+
+✅ SETIAP VARIASI HARUS:
+- Hook type BERBEDA (jangan semua hot take atau semua question hook)
+- Akhiri dengan REPLY BAIT berbeda
+- ~70-100 kata, 2-3 paragraf
+- ~6-8 emoji per tweet
+- Personal POV
+
+FORMAT OUTPUT (WAJIB):
 ---IDEA 1---
-[tweet]
+HOOK_TYPE: [sebutkan tipe hook-nya]
+[tweet lengkap dengan emoji dan reply bait]
 ---END---
 ---IDEA 2---
-[tweet]
+HOOK_TYPE: [sebutkan tipe hook-nya]
+[tweet lengkap]
 ---END---
 
-GENERATE — ingat: karakter pertama = emoji, tiap paragraf = emoji, WAJIB emotion emoji sesuai tone:`;
+GENERATE ${maxCount} VARIASI:`;
 
   try {
     const result = await callAI({
       provider: key.provider, apiKey: key.api_key, model: key.model,
-      prompt, maxTokens: maxCount * 500, temperature: 0.9,
+      prompt, maxTokens: maxCount * 600, temperature: 0.9,
     });
 
     const blocks = result.content.split(/---IDEA \d+---/).filter(Boolean);
     const ideas: GeneratedIdea[] = [];
     for (let i = 0; i < blocks.length && ideas.length < maxCount; i++) {
-      let c = blocks[i].replace(/---END---/, '').trim();
-      if (c && c.length > 20) {
-        c = postProcess(c);
-        ideas.push({ id: ideas.length + 1, content: c, emoji_count: (c.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length, tone, language });
+      let block = blocks[i].replace(/---END---/, '').trim();
+      // Extract HOOK_TYPE if present
+      let hook_type: string | undefined;
+      if (block.startsWith('HOOK_TYPE:')) {
+        const lines = block.split('\n');
+        hook_type = lines[0].replace('HOOK_TYPE:', '').trim();
+        block = lines.slice(1).join('\n').trim();
+      }
+      if (block && block.length > 20) {
+        block = postProcess(block);
+        ideas.push({
+          id: ideas.length + 1,
+          content: block,
+          emoji_count: (block.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length,
+          tone,
+          language,
+          hook_type,
+        });
       }
     }
     return { ideas, provider: result.provider };

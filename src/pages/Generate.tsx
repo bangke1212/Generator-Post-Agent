@@ -29,7 +29,7 @@ export default function Generate({ onTabChange }: Props) {
     if (!result) return;
     insertPost({ content: result.content, topic: result.topic, emoji_count: result.emoji_count });
     setResult(null);
-    onTabChange('dashboard');
+    onTabChange('ideas');
   };
 
   const handleCopy = () => {
@@ -45,7 +45,7 @@ export default function Generate({ onTabChange }: Props) {
         <div><h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🤖</span> Generate Single</h2></div>
         <div className="flex gap-2">
           <button onClick={() => onTabChange('ideas')} className="btn-ghost text-sm">💡 Ideas Mode</button>
-          <button onClick={() => onTabChange('dashboard')} className="btn-ghost text-sm">← Dashboard</button>
+          <button onClick={() => onTabChange('ideas')} className="btn-ghost text-sm">← Home</button>
         </div>
       </div>
 
@@ -87,6 +87,7 @@ export default function Generate({ onTabChange }: Props) {
         <div className="card text-center py-10 space-y-3 animate-fade-in">
           <div className="text-5xl animate-float">✨</div>
           <p className="text-[#9494b8] font-medium">Pilih topik dan klik Generate</p>
+          <p className="text-xs text-[#666680] max-w-sm mx-auto">Tweet viral-ready dengan hook kuat & reply bait — optimized X Algorithm 2026</p>
         </div>
       )}
     </div>

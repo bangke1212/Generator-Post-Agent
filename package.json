@@ -1,7 +1,7 @@
 {
   "name": "twitter-ai-agent",
-  "version": "3.0.0",
-  "description": "AI-powered Twitter auto-posting bot — Vite + React SPA",
+  "version": "4.0.0",
+  "description": "AI-powered X (Twitter) viral tweet generator — Vite + React SPA — Optimized for X Algorithm 2026",
   "private": true,
   "type": "module",
   "scripts": {

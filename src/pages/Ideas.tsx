@@ -43,12 +43,10 @@ export default function Ideas({ onTabChange }: Props) {
     } finally { setLoading(false); }
   };
 
-  const handlePost = async (item: GeneratedIdea) => {
+  const handlePost = (item: GeneratedIdea) => {
     setPosting(item.id);
     try {
-      const post = insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
-      // Mark as posted (simulation)
-      const { insertPost } = await import('../store');
+      insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
       postedIds.add(item.id);
       setPostedIds(new Set(postedIds));
     } catch (e: any) {
@@ -85,11 +83,11 @@ export default function Ideas({ onTabChange }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">💡</span> Kolom Ide</h2>
-          <p className="text-sm text-[#666680] mt-1">Generate hingga 10 ide posting dari satu topik</p>
+          <p className="text-sm text-[#666680] mt-1">Generate hingga 10 ide posting viral — optimized X Algorithm 2026</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => onTabChange('generate')} className="btn-ghost text-sm">🤖 Single</button>
-          <button onClick={() => onTabChange('dashboard')} className="btn-ghost text-sm">← Dashboard</button>
+          <button onClick={() => onTabChange('ideas')} className="btn-ghost text-sm">← Home</button>
         </div>
       </div>
 
@@ -161,7 +159,7 @@ export default function Ideas({ onTabChange }: Props) {
             {selected.size > 0 && (
               <div className="flex gap-2">
                 <span className="text-xs text-[#666680] self-center">{selected.size} dipilih</span>
-                <button onClick={handlePostSelected} className="btn-accent text-xs py-1.5 px-3">🐦 Post {selected.size} tweet</button>
+                <button onClick={handlePostSelected} className="btn-accent text-xs py-1.5 px-3">🐦 Simpan {selected.size} tweet</button>
               </div>
             )}
           </div>
@@ -171,8 +169,9 @@ export default function Ideas({ onTabChange }: Props) {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-[#6366f1]/10 flex items-center justify-center text-xs font-bold text-[#818cf8]">{item.id}</span>
+                  {item.hook_type && <span className="badge badge-default text-[10px]">{item.hook_type}</span>}
                   <span className="text-xs text-[#666680]">🎨 {item.emoji_count} emoji</span>
-                  {postedIds.has(item.id) && <span className="badge badge-success text-[10px]">✅ Posted</span>}
+                  {postedIds.has(item.id) && <span className="badge badge-success text-[10px]">✅ Disimpan</span>}
                 </div>
                 <div className="flex items-center gap-1">
                   {!postedIds.has(item.id) && (
@@ -185,13 +184,13 @@ export default function Ideas({ onTabChange }: Props) {
                   </button>
                   {!postedIds.has(item.id) && (
                     <button onClick={() => handlePost(item)} disabled={posting === item.id} className="w-8 h-8 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center text-sm text-[#06b6d4] hover:bg-[#06b6d4]/20">
-                      {posting === item.id ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : '🐦'}
+                      {posting === item.id ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : '💾'}
                     </button>
                   )}
                 </div>
               </div>
               <div className="bg-[#0d0d25] rounded-xl p-4 border border-[#1e1e4a]">
-                <p className="text-sm leading-[1.8] whitespace-pre-wrap text-[#d4d4e8]">{item.content.length > 250 ? item.content.slice(0, 250) + '...' : item.content}</p>
+                <p className="text-sm leading-[1.8] whitespace-pre-wrap text-[#d4d4e8]">{item.content.length > 280 ? item.content.slice(0, 280) + '...' : item.content}</p>
               </div>
               <div className="mt-2 text-[10px] text-[#666680]">~{item.content.split(/\s+/).length} kata</div>
             </div>
@@ -202,7 +201,7 @@ export default function Ideas({ onTabChange }: Props) {
       {!loading && !error && ideas.length === 0 && (
         <div className="card-glow text-center py-12 space-y-4 animate-fade-in">
           <div className="text-5xl animate-float">💡</div>
-          <div><p className="text-[#9494b8] font-semibold text-base">Tulis ide kamu di atas</p><p className="text-xs text-[#666680] mt-2 max-w-sm mx-auto">AI akan generate hingga 10 variasi postingan natural</p></div>
+          <div><p className="text-[#9494b8] font-semibold text-base">Tulis ide kamu di atas</p><p className="text-xs text-[#666680] mt-2 max-w-sm mx-auto">AI akan generate hingga 10 variasi postingan viral dengan hook kuat & reply bait</p></div>
           <div className="flex flex-wrap justify-center gap-2 pt-2">
             {['quantum computing', 'AI etika', 'remote work', 'crypto regulation', 'mental health'].map(s => (
               <button key={s} onClick={() => setIdea(s)} className="chip text-xs">{s}</button>

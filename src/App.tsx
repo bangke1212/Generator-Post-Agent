@@ -29,17 +29,18 @@ export default function App() {
           <Route path="/ideas" element={<Ideas onTabChange={onTabChange} />} />
           <Route path="/generate" element={<Generate onTabChange={onTabChange} />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Ideas onTabChange={onTabChange} />} />
         </Routes>
       </main>
 
       <footer className="relative z-10 border-t border-[#1e1e4a]/50 py-6 mt-12">
         <div className="max-w-5xl mx-auto px-5 text-center">
           <p className="text-xs text-[#666680]">
-            🤖 <span className="gradient-text font-semibold">Twitter AI Agent</span>
+            🤖 <span className="gradient-text font-semibold">Twitter AI Agent v4</span>
             <span className="mx-2">·</span>
-            Vite + React SPA
+            X Algorithm 2026 Optimized
             <span className="mx-2">·</span>
-            Built with ❤️
+            Hook + Reply Bait + Conversation
           </p>
         </div>
       </footer>
