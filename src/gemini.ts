@@ -44,7 +44,7 @@ function ensureParagraphSpacing(text: string): string {
 
 // ---- Anti-Bot Filter ----
 
-const BOT_PATTERNS: Array<{ p: RegExp; r: string }> = [
+const BOT_PATTERNS: Array<{ p: RegExp; r: string | ((_: string, p1: string, p2: string) => string) }> = [
   { p: /\b(Tahukah kamu bahwa|Perlu diketahui bahwa|Di era modern ini,|Pada hakikatnya,)\s*/gi, r: '' },
   { p: /\b(Semoga bermanfaat!?|Semoga informasi ini|Terima kasih telah membaca|Salam sukses!?|Sekian dan terima kasih)[.!]?\s*$/gim, r: '' },
   { p: /\b(menarik untuk dicermati|patut kita apresiasi|perlu digarisbawahi|dapat disimpulkan bahwa|marilah kita bersama)\b/gi, r: '' },
