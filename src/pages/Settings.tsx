@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAllApiKeys, saveApiKey, deleteApiKey, ApiKey } from '../store';
-import { PROVIDER_PRESETS, testConnection } from '../providers';
+import { PROVIDER_PRESETS, getModelProfile, testConnection } from '../providers';
 
 export default function Settings() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
@@ -59,11 +59,17 @@ export default function Settings() {
     if (k) { saveApiKey({ ...k, is_active: true }); refresh(); showToast('success', 'Diaktifkan!'); }
   };
 
+  // Current model info for tooltip
+  const modelProfile = getModelProfile(provider, model);
+
   return (
     <div className="space-y-6 animate-fade-in">
       {toast && <div className={`toast toast-${toast.type}`}>{toast.text}</div>}
 
-      <div><h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🔑</span> API Keys & Provider</h2><p className="text-sm text-[#666680] mt-1">Kelola API key dari berbagai provider</p></div>
+      <div>
+        <h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🔑</span> API Keys & Provider</h2>
+        <p className="text-sm text-[#666680] mt-1">Multi-provider AI — optimized X Algorithm 2026</p>
+      </div>
 
       {keys.length > 0 && (
         <div className="card-glow space-y-3 animate-fade-in-up">
@@ -114,6 +120,29 @@ export default function Settings() {
             {((PROVIDER_PRESETS as any)[provider]?.models || []).map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
         </div>
+
+        {/* Model Info Card */}
+        {modelProfile && (
+          <div className="p-4 rounded-2xl border border-[#1e1e4a] bg-[#0d0d25] space-y-2 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="badge badge-accent text-[10px]">Best for</span>
+              <span className="text-[#d4d4e8]">{modelProfile.bestFor}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="badge badge-info text-[10px] shrink-0 mt-0.5">Strengths</span>
+              <span className="text-[#9494b8]">{modelProfile.strengths?.join(' · ')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="badge badge-default text-[10px]">Temp</span>
+              <span className="text-[#9494b8]">{modelProfile.temperature}</span>
+              <span className="badge badge-default text-[10px] ml-3">Tokens</span>
+              <span className="text-[#9494b8]">{modelProfile.maxTokens}</span>
+            </div>
+            {(PROVIDER_PRESETS as any)[provider]?.rateLimitNote && (
+              <p className="text-[#666680] italic">{(PROVIDER_PRESETS as any)[provider].rateLimitNote}</p>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">API Key</label>
