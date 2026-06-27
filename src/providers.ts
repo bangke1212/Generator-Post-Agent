@@ -1,6 +1,6 @@
 // Multi-provider AI — Vite client-side (no backend)
 // X Algorithm 2026 — All-timeline coverage optimization
-// 7 Providers · 25 Models · 18 Free
+// 6 Providers · 22 Models · 15 Free
 
 import OpenAI from 'openai';
 
@@ -28,44 +28,44 @@ export interface ProviderConfig {
 }
 
 export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
-  // ── OpenRouter (router gateway) ──────────────────────────
+  // ── OpenRouter — GRATIS, no credit card ─────────────────
   openrouter: {
     name: 'OpenRouter',
     icon: '🔀',
     baseUrl: 'https://openrouter.ai/api/v1',
     docs: 'https://openrouter.ai/keys',
-    rateLimitNote: 'Free models: ~20 req/min. Paid: unlimited.',
+    rateLimitNote: '✅ GRATIS! 20 req/min free tier. No credit card. Daftar → openrouter.ai/keys',
     models: [
       {
         id: 'google/gemini-2.0-flash-001',
-        name: '🆓 Gemini 2.0 Flash (Best Free)',
+        name: '🆓 Gemini 2.0 Flash ⭐',
         free: true,
         temperature: 0.88,
         maxTokens: 700,
         strengths: ['natural_id', 'emoji_rich', 'fast'],
-        bestFor: 'general & supportif — paling natural untuk bahasa Indonesia',
+        bestFor: '🏆 BEST OVERALL — natural ID + emoji kreatif',
       },
       {
         id: 'meta-llama/llama-3.3-70b-instruct',
-        name: '🆓 Llama 3.3 70B (Free)',
+        name: '🆓 Llama 3.3 70B ⭐',
         free: true,
         temperature: 0.82,
         maxTokens: 650,
         strengths: ['structured', 'logical', 'debate'],
-        bestFor: 'debate & konten analitis — reasoning kuat',
+        bestFor: '🏆 DEBATE & ANALISIS — reasoning paling kuat',
       },
       {
         id: 'deepseek/deepseek-r1-distill-llama-70b',
-        name: '🆓 DeepSeek R1 70B (Free)',
+        name: '🆓 DeepSeek R1 70B ⭐',
         free: true,
         temperature: 0.78,
         maxTokens: 800,
         strengths: ['deep_reasoning', 'contrarian', 'technical'],
-        bestFor: 'kritik-pedas & hot take — chain-of-thought reasoning',
+        bestFor: '🏆 KRITIK PEDAS — chain-of-thought reasoning',
       },
       {
         id: 'mistralai/mistral-7b-instruct',
-        name: '🆓 Mistral 7B (Free)',
+        name: '🆓 Mistral 7B',
         free: true,
         temperature: 0.85,
         maxTokens: 500,
@@ -74,7 +74,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       },
       {
         id: 'qwen/qwen-2.5-7b-instruct',
-        name: '🆓 Qwen 2.5 7B (Free)',
+        name: '🆓 Qwen 2.5 7B',
         free: true,
         temperature: 0.8,
         maxTokens: 600,
@@ -83,50 +83,12 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       },
       {
         id: 'microsoft/phi-4',
-        name: '🆓 Phi-4 (Free)',
+        name: '🆓 Phi-4',
         free: true,
         temperature: 0.75,
         maxTokens: 550,
         strengths: ['precise', 'safe'],
         bestFor: 'supportif & tips praktis',
-      },
-    ],
-  },
-
-  // ── Blackbox AI (300+ models, unlimited free tier) ──────
-  blackbox: {
-    name: 'Blackbox AI',
-    icon: '⬛',
-    baseUrl: 'https://api.blackbox.ai/v1',
-    docs: 'https://app.blackbox.ai',
-    rateLimitNote: '🔥 3 model GRATIS unlimited! Grok Code Fast, Minimax Free, Minimax M2.5',
-    models: [
-      {
-        id: 'blackboxai/x-ai/grok-code-fast-1:free',
-        name: '🆓 Grok Code Fast (xAI)',
-        free: true,
-        temperature: 0.82,
-        maxTokens: 700,
-        strengths: ['fast', 'structured', 'code_aware'],
-        bestFor: 'quick witty takes & structured content — xAI punya Elon, tone edgy',
-      },
-      {
-        id: 'blackboxai/minimax/minimax-free',
-        name: '🆓 Minimax Free (200K ctx)',
-        free: true,
-        temperature: 0.85,
-        maxTokens: 800,
-        strengths: ['long_context', 'balanced', 'conversational'],
-        bestFor: 'thread panjang & deep dive — 200K context window',
-      },
-      {
-        id: 'blackboxai/minimax/minimax-m2.5',
-        name: '🆓 Minimax M2.5 (Agent)',
-        free: true,
-        temperature: 0.84,
-        maxTokens: 750,
-        strengths: ['agentic', 'creative', 'multi_step'],
-        bestFor: 'kreatif + agentic — best overall free model Blackbox',
       },
     ],
   },
@@ -180,20 +142,20 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     icon: '💎',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
     docs: 'https://aistudio.google.com/app/apikey',
-    rateLimitNote: 'Free tier: 1500 req/day. Paid: 300 req/min.',
+    rateLimitNote: '✅ GRATIS! 1500 req/day. No credit card. Daftar → aistudio.google.com',
     models: [
       {
         id: 'gemini-2.0-flash',
-        name: '🆓 Gemini 2.0 Flash (Free Tier)',
+        name: '🆓 Gemini 2.0 Flash ⭐',
         free: true,
         temperature: 0.88,
         maxTokens: 800,
         strengths: ['natural_id', 'emoji_rich', 'trend_aware'],
-        bestFor: 'Bahasa Indonesia natural + emoji — paling "gue banget"',
+        bestFor: '🏆 BAHASA INDONESIA — paling natural & "gue banget"',
       },
       {
         id: 'gemini-1.5-flash',
-        name: '🆓 Gemini 1.5 Flash (Free Tier)',
+        name: '🆓 Gemini 1.5 Flash',
         free: true,
         temperature: 0.82,
         maxTokens: 650,
@@ -217,16 +179,16 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     icon: '⚡',
     baseUrl: 'https://api.groq.com/openai/v1',
     docs: 'https://console.groq.com/keys',
-    rateLimitNote: 'Free tier: 30 req/min, 14K TPM.',
+    rateLimitNote: '✅ GRATIS! 30 req/min. No credit card. Daftar → console.groq.com',
     models: [
       {
         id: 'llama-3.3-70b-versatile',
-        name: '🆓 Llama 3.3 70B (Free)',
+        name: '🆓 Llama 3.3 70B ⭐',
         free: true,
         temperature: 0.84,
         maxTokens: 650,
         strengths: ['structured', 'logical', 'debate'],
-        bestFor: 'debate & contrarian take',
+        bestFor: '🏆 DEBATE & CONTRARIAN — reasoning kuat + cepat',
       },
       {
         id: 'llama-3.1-8b-instant',
@@ -239,7 +201,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       },
       {
         id: 'gemma2-9b-it',
-        name: '🆓 Gemma 2 9B (Free)',
+        name: '🆓 Gemma 2 9B',
         free: true,
         temperature: 0.83,
         maxTokens: 550,
@@ -248,7 +210,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       },
       {
         id: 'mixtral-8x7b-32768',
-        name: '🆓 Mixtral 8x7B (Free)',
+        name: '🆓 Mixtral 8x7B',
         free: true,
         temperature: 0.86,
         maxTokens: 600,
@@ -264,29 +226,29 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     icon: '🦉',
     baseUrl: 'https://apihub.agnes-ai.com/v1',
     docs: 'https://platform.agnes-ai.com/settings/apiKeys',
-    rateLimitNote: 'Free tier generous. Check platform for limits.',
+    rateLimitNote: '✅ GRATIS! Free tier generous. Daftar → platform.agnes-ai.com',
     models: [
       {
         id: 'agnes-2.0-flash',
-        name: '🆓 Agnes 2.0 Flash (Free)',
+        name: '🆓 Agnes 2.0 Flash ⭐',
         free: true,
         temperature: 0.85,
         maxTokens: 650,
         strengths: ['balanced', 'conversational'],
-        bestFor: 'general purpose tweet generation',
+        bestFor: '🏆 GENERAL PURPOSE — balanced & versatile',
       },
       {
         id: 'agnes-2.0-pro',
-        name: '🆓 Agnes 2.0 Pro (Free)',
+        name: '🆓 Agnes 2.0 Pro ⭐',
         free: true,
         temperature: 0.9,
         maxTokens: 900,
         strengths: ['deep_reasoning', 'creative', 'viral_patterns'],
-        bestFor: 'thread viral & premium content',
+        bestFor: '🏆 THREAD VIRAL — premium reasoning & kreativitas',
       },
       {
         id: 'agnes-1.5-flash',
-        name: '🆓 Agnes 1.5 Flash (Free)',
+        name: '🆓 Agnes 1.5 Flash',
         free: true,
         temperature: 0.8,
         maxTokens: 500,
@@ -350,7 +312,6 @@ export function getModelProfile(provider: string, model: string): ModelConfig | 
 
 // ============================================================
 //  CORE AI CALLER — X Algorithm 2026
-//  All-timeline system prompt engineered per model
 // ============================================================
 
 export async function callAI(params: GenerateParams): Promise<{ content: string; provider: string; model: string }> {
