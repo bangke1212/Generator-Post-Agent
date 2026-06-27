@@ -1,5 +1,6 @@
 // Multi-provider AI — Vite client-side (no backend)
 // X Algorithm 2026 — All-timeline coverage optimization
+// 7 Providers · 25 Models · 18 Free
 
 import OpenAI from 'openai';
 
@@ -88,6 +89,44 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
         maxTokens: 550,
         strengths: ['precise', 'safe'],
         bestFor: 'supportif & tips praktis',
+      },
+    ],
+  },
+
+  // ── Blackbox AI (300+ models, unlimited free tier) ──────
+  blackbox: {
+    name: 'Blackbox AI',
+    icon: '⬛',
+    baseUrl: 'https://api.blackbox.ai/v1',
+    docs: 'https://app.blackbox.ai',
+    rateLimitNote: '🔥 3 model GRATIS unlimited! Grok Code Fast, Minimax Free, Minimax M2.5',
+    models: [
+      {
+        id: 'blackboxai/x-ai/grok-code-fast-1:free',
+        name: '🆓 Grok Code Fast (xAI)',
+        free: true,
+        temperature: 0.82,
+        maxTokens: 700,
+        strengths: ['fast', 'structured', 'code_aware'],
+        bestFor: 'quick witty takes & structured content — xAI punya Elon, tone edgy',
+      },
+      {
+        id: 'blackboxai/minimax/minimax-free',
+        name: '🆓 Minimax Free (200K ctx)',
+        free: true,
+        temperature: 0.85,
+        maxTokens: 800,
+        strengths: ['long_context', 'balanced', 'conversational'],
+        bestFor: 'thread panjang & deep dive — 200K context window',
+      },
+      {
+        id: 'blackboxai/minimax/minimax-m2.5',
+        name: '🆓 Minimax M2.5 (Agent)',
+        free: true,
+        temperature: 0.84,
+        maxTokens: 750,
+        strengths: ['agentic', 'creative', 'multi_step'],
+        bestFor: 'kreatif + agentic — best overall free model Blackbox',
       },
     ],
   },
