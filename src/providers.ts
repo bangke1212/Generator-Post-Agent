@@ -1,6 +1,6 @@
 // Multi-provider AI — Vite client-side (no backend)
 // X Algorithm 2026 — All-timeline coverage optimization
-// 7 Providers · 26+ Models
+// 7 Providers · 29+ Models
 
 import OpenAI from 'openai';
 
@@ -39,6 +39,10 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       { id: 'mistralai/mistral-7b-instruct', name: '🆓 Mistral 7B', free: true, temperature: 0.85, maxTokens: 500, strengths: ['concise', 'punchy'], bestFor: 'quick takes & one-liner hooks' },
       { id: 'qwen/qwen-2.5-7b-instruct', name: '🆓 Qwen 2.5 7B', free: true, temperature: 0.8, maxTokens: 600, strengths: ['multilingual', 'balanced'], bestFor: 'ID/EN bilingual content' },
       { id: 'microsoft/phi-4', name: '🆓 Phi-4', free: true, temperature: 0.75, maxTokens: 550, strengths: ['precise', 'safe'], bestFor: 'supportif & tips praktis' },
+      { id: 'qwen/qwen-3.8-27b-uncensored', name: '🔥 Qwen 3.8 27B Uncensored ⭐', free: true, temperature: 0.9, maxTokens: 900, strengths: ['unfiltered', 'raw', 'creative', 'edge'], bestFor: '🏆 KRITIK PEDAS & UNFILTERED — tanpa filter keamanan, opini raw' },
+      { id: 'qwen/qwen3.6-27b-uncensored', name: '🔥 Qwen 3.6 27B Uncensored ⭐', free: true, temperature: 0.9, maxTokens: 850, strengths: ['unfiltered', 'high_quality', 'creative', 'edge'], bestFor: '🏆 HIGH-QUALITY UNCENSORED — Q6_K_P quant, lebih tajam & kreatif' },
+      { id: 'qwen/qwen3.6-35b-moe', name: '🔥 Qwen 3.6 35B MoE ⭐', free: true, temperature: 0.88, maxTokens: 1000, strengths: ['deep_reasoning', 'creative', 'moE', 'uncensored'], bestFor: '🏆 MOE POWER — ~3B active params, uncensored & efficient' },
+    
     ],
   },
 
