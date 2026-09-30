@@ -2,8 +2,8 @@
 // X Algorithm 2026 — ALL-TIMELINE COVERAGE
 // For You Feed + Following Feed + Explore/Trending
 
-import { callAI, getModelParams, getModelProfile, PROVIDER_PRESETS } from './providers';
-import { getActiveApiKey, getSetting } from './store';
+import { callAI, getModelParams, getModelProfile } from './providers';
+import { getActiveApiKey } from './store';
 
 export interface GeneratedIdea {
   id: number;
@@ -13,8 +13,6 @@ export interface GeneratedIdea {
   language: string;
   hook_type?: string;
 }
-
-// ─── Post-Processing ─────────────────────────────────────
 
 function ensureParagraphSpacing(text: string): string {
   if (!text) return text;
@@ -49,7 +47,6 @@ const BOT_PATTERNS: Array<{ p: RegExp; r: string | ((_: string, p1: string, p2: 
   { p: /\b(menarik untuk dicermati|patut kita apresiasi|perlu digarisbawahi|dapat disimpulkan bahwa|marilah kita bersama|oleh karena itu|dengan demikian)\b/gi, r: '' },
   { p: /\n+(Demikianlah|Sekian|Salam hangat|Best regards|Cheers)[.!]?\s*\n?/gi, r: '\n' },
   { p: /([.!?]\s+)([a-z])/g, r: (_: string, p1: string, p2: string) => p1 + p2.toUpperCase() },
-  // Extra — hapus formalitas akademik
   { p: /\b(Berdasarkan data|Menurut penelitian|Studi menunjukkan|Hasil riset membuktikan)\s*/gi, r: '' },
   { p: /\b(Dalam konteks ini|Pada akhirnya|Intinya adalah|Kesimpulannya)\s*/gi, r: '' },
 ];
@@ -66,10 +63,6 @@ function postProcess(text: string): string {
   return ensureParagraphSpacing(t);
 }
 
-// ============================================================
-//  QUALITY EMOTION + EMOJI GUIDE
-// ============================================================
-
 const EMOJI_QUALITY_GUIDE = `
 🎨 EMOJI & EMOTION QUALITY GUIDE:
 
@@ -83,7 +76,7 @@ EMOSI → EMOJI MAPPING (WAJIB IKUTI):
 😏 Sinis/sarkastik  → 🗿🙃😮‍💨
 🥰 Wholesome/happy  → 🥰✨💖
 🤔 Kontemplatif     → 🤔🧐💭
-😈 Roasting/nyindir → 🗣️🔥💀
+😈 Roasting/nyindir �� 🗣️🔥💀
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ATURAN PAKAI EMOJI:
@@ -95,10 +88,6 @@ ATURAN PAKAI EMOJI:
 
 🚫 EMOJI DILARANG: ✅ ❌ 👉 👇 ‼️ 💯 🔴 🟢 🟡 ⬇️ ⬆️ ➡️
 `;
-
-// ============================================================
-//  X ALGORITHM 2026 — ALL TIMELINE PROMPT ENGINE
-// ============================================================
 
 const VIRAL_HOOK_STRATEGY = `
 🎯 8 VIRAL HOOKS (random tiap tweet):
@@ -156,8 +145,6 @@ const ALGO_ANTI_PENALTY = `
 - NO "Tahukah kamu", "Semoga bermanfaat"
 `;
 
-// ─── Model-specific hint injection ──────────────────────
-
 function getModelStrengthHint(provider: string, model: string): string {
   const profile = getModelProfile(provider, model);
   if (!profile || !profile.strengths.length) return '';
@@ -176,23 +163,27 @@ function getPerModelConstraints(provider: string, model: string): string {
   if (!profile) return '';
   const constraints: string[] = [];
   if (profile.maxTokens <= 500) {
-    constraints.push('⚠️ Kamu model compact: tweet 50-70 kata saja. Langsung to the point.');
+    constraints.push('⚠️ Kamu model compact: tweet 120-150 kata saja. Langsung to the point dan padat.');
   }
   if (profile.maxTokens >= 800) {
-    constraints.push('✅ Kamu model besar: boleh elaborate. Maks 120 kata.');
+    constraints.push('✅ Kamu model besar: boleh elaborate. Target 120-150 kata.');
   }
   return constraints.length ? `\n🔧 MODEL CONSTRAINTS:\n${constraints.join('\n')}\n` : '';
 }
 
-// ─── Generate Single Post ────────────────────────────────
+function getLanguageInstructions(language: string) {
+  const normalized = language === 'en' ? 'en' : 'id';
+  return normalized === 'en' ? TONE_GUIDE_EN : TONE_GUIDE_ID;
+}
 
 export async function generateContent(opts: { topic?: string; language?: string; tone?: string }) {
   const { topic = 'general', language = 'id' } = opts;
   const key = getActiveApiKey();
   if (!key) return { content: '⚠️ Belum ada API key aktif. Buka Settings → pilih provider → input key → Simpan & Aktifkan.', emoji_count: 0, topic, provider: 'none' };
 
-  const langName = language === 'id' ? 'Indonesia' : 'English';
-  const langGuidelines = language === 'id' ? TONE_GUIDE_ID : TONE_GUIDE_EN;
+  const normalizedLanguage = language === 'en' ? 'en' : 'id';
+  const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
+  const langGuidelines = getLanguageInstructions(normalizedLanguage);
 
   const modelHint = getModelStrengthHint(key.provider, key.model);
   const modelConstraints = getPerModelConstraints(key.provider, key.model);
@@ -216,9 +207,9 @@ ${ALGO_ANTI_PENALTY}
 - EMOJI sebagai karakter pertama (wajib)
 - 2-3 paragraf pendek
 - Tiap paragraf diawali emoji yang nyambung
-- 70-100 kata total
+- TARGET PANJANG: 120-150 kata total
 - Akhiri dengan REPLY BAIT natural
-- Personal voice: "gue/aku", bukan "kita/saya"
+- Personal voice: "gue/aku" (atau "I" untuk English)
 
 ⚠️ KUALITAS WAJIB:
 - TIDAK BOLEH generik, klise, atau template
@@ -226,13 +217,18 @@ ${ALGO_ANTI_PENALTY}
 - HARUS ada opini personal yang tajam
 - HARUS menggunakan emoji yang match emosi
 - Tone harus konsisten di seluruh tweet
+- JANGAN lebih pendek dari 120 kata atau lebih panjang dari 150 kata
 
-TULIS TWEET-NYA SAJA, TANPA LABEL, TANPA HEADER:`; 
+TULIS TWEET-NYA SAJA, TANPA LABEL, TANPA HEADER:`;
 
   try {
     const result = await callAI({
-      provider: key.provider, apiKey: key.api_key, model: key.model,
-      prompt, maxTokens: optimal.maxTokens, temperature: optimal.temperature,
+      provider: key.provider,
+      apiKey: key.api_key,
+      model: key.model,
+      prompt,
+      maxTokens: optimal.maxTokens,
+      temperature: optimal.temperature,
     });
     const content = postProcess(result.content);
     return { content, emoji_count: (content.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length, topic, provider: result.provider };
@@ -241,10 +237,8 @@ TULIS TWEET-NYA SAJA, TANPA LABEL, TANPA HEADER:`;
   }
 }
 
-// ─── Tone Instructions ───────────────────────────────────
-
 const TONE_INSTRUCTION: Record<string, string> = {
-  supportif: `🎭 TONE: SUPPORTIF — positif & membangun, kayak teman kasih semangat. 
+  supportif: `🎭 TONE: SUPPORTIF — positif & membangun, kayak teman kasih semangat.
 EMOJI TONE: 🥰✨💖🌱🤗 — wholesome vibes.
 HOOK: personal story atau relatable struggle.
 REPLY BAIT: "Ada yang lagi fase ini juga? 🥰"`,
@@ -260,15 +254,14 @@ HOOK: rant atau roast observation.
 REPLY BAIT: "Relate angkat tangan 💀", "Yang ngerasa kena, sini ngaku 👇"`,
 };
 
-// ─── Generate Ideas (Multi-variant) ──────────────────────
-
 export async function generateIdeas(opts: { idea: string; language?: string; tone?: string; count?: number }) {
   const { idea, language = 'id', tone = 'supportif', count = 5 } = opts;
   const key = getActiveApiKey();
   if (!key) return { ideas: [] as GeneratedIdea[], provider: 'none' };
 
-  const langName = language === 'id' ? 'Indonesia' : 'English';
-  const langGuidelines = language === 'id' ? TONE_GUIDE_ID : TONE_GUIDE_EN;
+  const normalizedLanguage = language === 'en' ? 'en' : 'id';
+  const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
+  const langGuidelines = getLanguageInstructions(normalizedLanguage);
   const maxCount = Math.min(count, 10);
   const optimal = getModelParams(key.provider, key.model);
   const modelHint = getModelStrengthHint(key.provider, key.model);
@@ -290,30 +283,34 @@ ${EMOJI_RULES}
 ${ALGO_ANTI_PENALTY}
 
 ✅ FORMAT OUTPUT — TIAP VARIASI DIPISAH "---":
---- 
+---
 [EMOJI] tweet ke-1
---- 
+---
 [EMOJI] tweet ke-2
 (dan seterusnya)
 
 ⚠️ SETIAP TWEET HARUS:
-- 60-100 kata (padat, berbobot)
+- 120-150 kata (padat, berbobot)
 - Hook berbeda (random dari 8 hook types)
 - Emoji emosi yang match (ikut EMOJI QUALITY GUIDE)
-- Personal voice: "gue/aku"
+- Personal voice: "gue/aku" atau "I" untuk English
 - Akhiri reply bait natural
 - TIDAK BOLEH ada kalimat generik, klise, atau template
 - TIDAK BOLEH pakai frasa formal/akademik
+- JANGAN kurang dari 120 kata atau lebih dari 150 kata
 
-TULIS ${maxCount} TWEET:`; 
+TULIS ${maxCount} TWEET:`;
 
   try {
     const result = await callAI({
-      provider: key.provider, apiKey: key.api_key, model: key.model,
-      prompt, maxTokens: optimal.maxTokens * 2, temperature: optimal.temperature,
+      provider: key.provider,
+      apiKey: key.api_key,
+      model: key.model,
+      prompt,
+      maxTokens: optimal.maxTokens * 2,
+      temperature: optimal.temperature,
     });
 
-    // Split: "---" atau "===" atau "***" sebagai delimiter
     const parts = result.content
       .split(/\n?-{3,}\n?|\n?={3,}\n?|\n?\*{3,}\n?/)
       .map(p => postProcess(p.trim()))
@@ -329,7 +326,7 @@ TULIS ${maxCount} TWEET:`;
       content,
       emoji_count: (content.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length,
       tone: tone || 'general',
-      language: language || 'id',
+      language: normalizedLanguage || 'id',
       hook_type: hookTypes[i % hookTypes.length],
     }));
 
@@ -338,8 +335,6 @@ TULIS ${maxCount} TWEET:`;
     return { ideas: [] as GeneratedIdea[], provider: 'error' };
   }
 }
-
-// ─── Legacy wrapper for compatibility ────────────────────
 
 export async function generateWithTopic(model: string, topic: string, apiKey?: string): Promise<string> {
   const r = await generateContent({ topic, language: 'id' });
@@ -350,3 +345,5 @@ export async function generateWithIdea(model: string, idea: string, apiKey?: str
   const r = await generateIdeas({ idea, language: 'id', tone: 'supportif', count: 5 });
   return r.ideas;
 }
+
+export const DEFAULT_LANGUAGE = 'id';
