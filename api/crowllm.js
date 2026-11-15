@@ -2,20 +2,19 @@
 const CROWLLM = 'https://crowllm.com';
 
 function decodeHtml(value) {
-  return value
-    .replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+  return value.replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, ' ')
     .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'");
 }
 
 function htmlText(html) {
-  return decodeHtml(html.replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')
-    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' '));
+  return decodeHtml(html.replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' '));
 }
 
 function zeroPrice(text, label) {
-  const match = text.match(new RegExp(label + String.raw\`\\s*\\$?\\s*([0-9]+(?:\\.[0-9]+)?)\`, 'i'));
+  const match = text.match(new RegExp(label + '\\s*\\$?\\s*([0-9]+(?:\\.[0-9]+)?)', 'i'));
   return !!match && Number(match[1]) === 0;
 }
 
@@ -25,9 +24,9 @@ function parseMetrics(html, modelId) {
   const context = index >= 0
     ? text.slice(Math.max(0, index - 500), index + 2200)
     : text;
-  const successMatch = context.match(/(?:success rate|served within 24 hours)[^0-9]{0,70}([0-9]+(?:\\.[0-9]+)?)\\s*%/i);
-  const latencyMatch = context.match(/(?:average latency|whole response time|latency)[^0-9]{0,70}([0-9]+(?:\\.[0-9]+)?)\\s*(ms|msec|s|sec|seconds)?/i);
-  const requestsMatch = context.match(/requests?\\s*(?:\\(24h\\))?[^0-9]{0,30}([0-9,]+)/i);
+  const successMatch = context.match(/(?:success rate|served within 24 hours)[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const latencyMatch = context.match(/(?:average latency|whole response time|latency)[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|seconds)?/i);
+  const requestsMatch = context.match(/requests?\s*(?:\(24h\))?[^0-9]{0,30}([0-9,]+)/i);
   let averageLatencyMs = null;
   if (latencyMatch) {
     averageLatencyMs = Number(latencyMatch[1]) * (/^(s|sec|seconds)$/i.test(latencyMatch[2] || '') ? 1000 : 1);
@@ -49,7 +48,7 @@ function parseMetrics(html, modelId) {
 
 async function fetchText(url, timeoutMs = 18000) {
   const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), cache: 'no-store' });
-  if (!response.ok) throw new Error(`CrowLLM returned HTTP ${response.status} for ${url}`);
+  if (!response.ok) throw new Error('CrowLLM returned HTTP ' + response.status + ' for ' + url);
   return response.text();
 }
 
@@ -69,8 +68,8 @@ async function mapWithConcurrency(items, limit, mapper) {
 }
 
 async function getFreeChatModels(apiKey) {
-  const response = await fetch(`${CROWLLM}/v1/models`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
+  const response = await fetch(CROWLLM + '/v1/models', {
+    headers: { Authorization: 'Bearer ' + apiKey },
     signal: AbortSignal.timeout(20000),
     cache: 'no-store',
   });
@@ -79,8 +78,7 @@ async function getFreeChatModels(apiKey) {
   try { payload = JSON.parse(payloadText); }
   catch { throw new Error('CrowLLM /v1/models returned invalid JSON.'); }
   if (!response.ok) {
-    const message = payload?.error?.message || `CrowLLM models request failed (HTTP ${response.status}).`;
-    throw new Error(message);
+    throw new Error(payload?.error?.message || 'CrowLLM models request failed (HTTP ' + response.status + ').');
   }
 
   const rows = Array.isArray(payload?.data) ? payload.data : [];
@@ -93,15 +91,13 @@ async function getFreeChatModels(apiKey) {
   if (!candidates.length) return [];
 
   let statusHtml = '';
-  try { statusHtml = await fetchText(`${CROWLLM}/status`, 20000); } catch {}
+  try { statusHtml = await fetchText(CROWLLM + '/status', 20000); } catch {}
 
   const verified = await mapWithConcurrency(candidates, 6, async id => {
-    const detailHtml = await fetchText(`${CROWLLM}/models/${encodeURIComponent(id)}`);
+    const detailHtml = await fetchText(CROWLLM + '/models/' + encodeURIComponent(id));
     const detailText = htmlText(detailHtml);
-    const hasChatEndpoint = /\\/v1\\/chat\\/completions|\\bchat\\s*completions\\b/i.test(detailHtml);
-    const hasZeroInput = zeroPrice(detailText, 'Input');
-    const hasZeroOutput = zeroPrice(detailText, 'Output');
-    const explicitlyFree = hasZeroInput && hasZeroOutput;
+    const hasChatEndpoint = /\/v1\/chat\/completions|\bchat\s*completions\b/i.test(detailHtml);
+    const explicitlyFree = zeroPrice(detailText, 'Input') && zeroPrice(detailText, 'Output');
     if (!explicitlyFree || !hasChatEndpoint) return null;
 
     // Prefer the live status page. Fall back to the official model detail page
@@ -109,7 +105,7 @@ async function getFreeChatModels(apiKey) {
     let metrics = parseMetrics(statusHtml, id);
     if (metrics.status === 'no_data') metrics = parseMetrics(detailHtml, id);
     return {
-      id, // exact ID returned by GET /v1/models
+      id,
       name: id,
       free: true,
       temperature: 0.82,
@@ -145,12 +141,12 @@ export default async function handler(req, res) {
       res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({
         models,
-        statusUrl: `${CROWLLM}/status`,
+        statusUrl: CROWLLM + '/status',
         checkedAt: new Date().toISOString(),
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown CrowLLM error';
-      return res.status(502).json({ error: { message: `Gagal mengambil katalog CrowLLM: ${message}` } });
+      return res.status(502).json({ error: { message: 'Gagal mengambil katalog CrowLLM: ' + message } });
     }
   }
 
@@ -162,10 +158,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const upstream = await fetch(`${CROWLLM}/v1/chat/completions`, {
+    const upstream = await fetch(CROWLLM + '/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey.trim()}`,
+        Authorization: 'Bearer ' + apiKey.trim(),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -186,7 +182,7 @@ export default async function handler(req, res) {
     const message = error instanceof Error ? error.message : 'Unknown upstream error';
     return res.status(502).json({
       error: {
-        message: `Backend Vercel gagal menghubungi CrowLLM: ${message}. Coba lagi atau periksa status CrowLLM.`,
+        message: 'Backend Vercel gagal menghubungi CrowLLM: ' + message + '. Coba lagi atau periksa status CrowLLM.',
       },
     });
   }
