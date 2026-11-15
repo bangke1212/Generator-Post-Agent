@@ -1,31 +1,106 @@
-# PostPilot — AI Post Studio
+# 🤖 Twitter AI Agent v4 — X Algorithm 2026 Optimized
 
-Dashboard untuk membuat draft dan mempublikasikan post ke X menggunakan Xingchi API. Dibangun dengan React, Vite, TypeScript, dan Netlify Functions.
+> AI-powered viral tweet generator. Built for the X (Twitter) Algorithm 2026.
 
-## Fitur
-- Generator satu post dan multi-ide dengan pilihan tone/bahasa.
-- Riwayat draft tersimpan lokal di browser.
-- Panggilan Xingchi dilakukan dari Netlify Function; API key tidak dikirim ke browser.
-- Publikasi langsung ke X melalui endpoint server-side (memerlukan OAuth 2.0 User Context token).
-- Responsive dashboard untuk desktop dan mobile.
+![Version](https://img.shields.io/badge/version-4.0.0-blue) ![Stack](https://img.shields.io/badge/stack-Vite%20%2B%20React%20%2B%20TypeScript-purple) ![AI](https://img.shields.io/badge/AI-Multi--Provider-green)
 
-## Jalankan lokal
+## 🎯 What It Does
+
+Generate viral-ready tweets optimized for the **X Algorithm 2026** — not generic AI slop. Every tweet is crafted with:
+
+- **8 Hook Types** — Hot takes, surprising stats, contrarian opinions, personal confessions, rants, and more
+- **Reply Bait Strategy** — End every tweet with questions that spark conversation (the +75 signal)
+- **Anti-Bot Filter** — Post-processing removes robotic phrases, adds natural paragraph spacing
+- **Multi-Tone Support** — Supportif, Debate, Kritik Pedas (each with tone-specific emoji guidelines)
+- **Multi-Provider** — OpenRouter (free models), OpenAI, Gemini, Groq, Agnes AI, Custom API
+
+## 🧠 Why This Matters (X Algorithm 2026)
+
+The X algorithm changed significantly in late 2025. Here's what matters now:
+
+| Signal | Weight | Strategy |
+|--------|--------|----------|
+| **Reply + Author Reply** | **+75** | End tweets with open questions |
+| Like | +0.5 | Don't optimize for this |
+| Retweet | +1.0 | Side effect, not goal |
+| Dwell Time (2+ min) | +10 | Thread-style, paragraph spacing |
+| Profile Visits | +12 | Build curiosity |
+
+**Penalized:** 3+ hashtags, links in main tweet, engagement bait ("RT if you agree")
+
+## 🚀 Quick Start
+
 ```bash
+# Install dependencies
 npm install
+
+# Start dev server
 npm run dev
-npx netlify dev
+
+# Build for production
+npm run build
 ```
 
-## Environment variables Netlify
-Atur di Site configuration → Environment variables:
-- `APP_ACCESS_PASSWORD`: password untuk membuka dashboard.\n- `APP_SESSION_SECRET`: rahasia acak panjang (minimal 32 karakter) untuk menandatangani cookie sesi.\n- `XINGCHI_API_KEY`: API key Xingchi yang baru.
-- `XINGCHI_BASE_URL`: default `https://api.xingchiapi.com/v1`.
-- `XINGCHI_MODEL`: default `gpt-6.1-sol`; pastikan alias ini tersedia pada akun Xingchi.
-- `X_USER_ACCESS_TOKEN` (opsional): OAuth 2.0 User Context token X dengan scope `tweet.write` untuk publikasi langsung.
+## 🔐 Setup API & Dashboard Access
 
-Setelah mengubah environment variables, lakukan redeploy. Login dashboard tersedia pada menu Koneksi & Pengaturan; sesi berlaku 7 hari. Jangan pernah menaruh secret di `VITE_*`, source frontend, atau Git.
+API key tidak disimpan di browser. Atur seluruh secret melalui Netlify **Site configuration → Environment variables**:
 
-## Deploy
-Import repository ini di Netlify. Build command `npm run build`, publish directory `dist`; konfigurasi sudah tersedia di `netlify.toml`.
+- `APP_ACCESS_PASSWORD`: password untuk membuka dashboard.
+- `APP_SESSION_SECRET`: secret acak minimal 32 karakter untuk cookie sesi.
+- `XINGCHI_API_KEY`: API key Xingchi (gunakan key baru).
+- `XINGCHI_BASE_URL`: `https://api.xingchiapi.com/v1`.
+- `XINGCHI_MODEL`: `gpt-6.1-sol` (pastikan model ini tersedia di akun Xingchi).
+- `X_USER_ACCESS_TOKEN` (opsional): OAuth 2.0 User Context token X dengan scope `tweet.write` untuk publish langsung.
 
-Catatan: Xingchi API key hanya untuk menghasilkan teks, bukan untuk mempublikasikan ke X. Publikasi langsung memerlukan token dan akses API X.
+Setelah menyimpan variabel, lakukan redeploy. Login di menu **Koneksi & Pengaturan**; sesi berlaku 7 hari. Jangan menaruh secret di `VITE_*`, source frontend, atau Git.
+
+## 🚀 Deploy ke Netlify
+
+Import repository dari GitHub. Konfigurasi sudah ada di `netlify.toml`:
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Functions directory: `netlify/functions`
+
+Jalankan lokal dengan `npm install`, `npm run dev`, atau `npx netlify dev` untuk mengetes Functions.
+
+## 📁 Project Structure
+
+```
+src/
+├── App.tsx              # Router & layout
+├── gemini.ts            # AI prompt engine (X 2026 optimized)
+├── providers.ts         # Multi-provider AI configuration
+├── store.ts             # LocalStorage-based data store
+├── components/
+│   └── Header.tsx       # Navigation header
+└── pages/
+    ├── Ideas.tsx        # Multi-variant idea generator
+    ├── Generate.tsx     # Single tweet generator
+    └── Settings.tsx     # API key management
+```
+
+## 🔥 Viral Tweet Formula (Built into Prompts)
+
+1. **Hook first** — 8 hook types, randomly chosen per generation
+2. **Emoji mandatory** — First character of every tweet & every paragraph starts with emoji
+3. **Personal POV** — "gue/aku" not "kita/para ahli"
+4. **Paragraph rhythm** — Short → long → short sentences
+5. **Reply bait** — Always end with open-ended question or call-to-reply
+6. **Anti-bot** — No "Tahukah kamu", "Semoga bermanfaat!", "Di era modern"
+
+## 🛠 Tech Stack
+
+- **Vite** — Build tool
+- **React 18** — UI framework
+- **TypeScript** — Type safety
+- **TailwindCSS** — Styling
+- **OpenAI SDK** — AI provider interface
+- **React Router** — Client-side routing
+
+## 📝 License
+
+MIT
+
+---
+
+Built with ❤️ for the X algorithm era.
