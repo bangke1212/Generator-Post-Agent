@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { generateIdeas, GeneratedIdea } from '../gemini';
-import { insertPost, getActiveApiKey } from '../store';
+import { insertPost, updatePost } from '../store';
 
 interface Props { onTabChange: (tab: string) => void; }
 
@@ -49,27 +49,28 @@ export default function Ideas({ onTabChange }: Props) {
     } finally { setLoading(false); }
   };
 
-  const handlePost = (item: GeneratedIdea) => {
+  const handlePost = async (item: GeneratedIdea) => {
     setPosting(item.id);
+    const saved = insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
     try {
-      insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
-      postedIds.add(item.id);
-      setPostedIds(new Set(postedIds));
-    } catch (e: any) {
-      alert('Gagal: ' + e.message);
+      const response = await fetch('/.netlify/functions/publish', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: item.content })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Publikasi gagal');
+      updatePost(saved.id, { status: 'posted', tweet_id: data.id });
+      setPostedIds(prev => new Set(prev).add(item.id));
+      if (data.url) window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      updatePost(saved.id, { status: 'failed' });
+      alert('Draft tetap tersimpan, tetapi belum berhasil diposting: ' + (e instanceof Error ? e.message : 'Kesalahan tidak diketahui'));
     } finally { setPosting(null); }
   };
 
   const handlePostSelected = async () => {
     const sel = ideas.filter(i => selected.has(i.id) && !postedIds.has(i.id));
-    for (const item of sel) {
-      setPosting(item.id);
-      insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
-      postedIds.add(item.id);
-      setPostedIds(new Set(postedIds));
-      await new Promise(r => setTimeout(r, 500));
-      setPosting(null);
-    }
+    for (const item of sel) await handlePost(item);
   };
 
   const toggleSelect = (id: number) => {
@@ -188,7 +189,7 @@ export default function Ideas({ onTabChange }: Props) {
                   </button>
                   {!postedIds.has(item.id) && (
                     <button onClick={() => handlePost(item)} disabled={posting === item.id} className="w-8 h-8 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center text-sm text-[#06b6d4] hover:bg-[#06b6d4]/20">
-                      {posting === item.id ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : '💾'}
+                      {posting === item.id ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : '↗'}
                     </button>
                   )}
                 </div>
