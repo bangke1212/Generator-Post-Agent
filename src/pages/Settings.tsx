@@ -78,9 +78,8 @@ export default function Settings() {
     const keyToUse = apiKey.trim() || keys.find(k => k.provider === 'crowllm')?.api_key || '';
     if (!keyToUse) { showToast('error', 'Masukkan API Key CrowLLM dulu'); return; }
     setSyncingModels(true);
-    setCrowllmSynced(false);
-    setCrowllmModels([]);
-    setModelSyncMessage('');
+    // Keep the last successful catalogue visible while refreshing; replace it only after success.
+    setModelSyncMessage('Memperbarui katalog CrowLLM...');
     try {
       const models = await fetchCrowllmFreeModels(keyToUse);
       setCrowllmModels(models);
