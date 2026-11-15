@@ -7,7 +7,8 @@ export default function Settings(){
  useEffect(()=>{void refresh();},[]);
  const login=async()=>{setLoginBusy(true);setMessage('');try{const r=await fetch('/.netlify/functions/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Login gagal');setPassword('');await refresh();setMessage('Login berhasil. Dashboard siap digunakan.');}catch(e){setMessage(e instanceof Error?e.message:'Login gagal');}finally{setLoginBusy(false);}};
  const logout=async()=>{await fetch('/.netlify/functions/logout',{method:'POST'});setTest(null);await refresh();setMessage('Anda sudah logout.');};
- const chooseModel=(id:string)=>{setSelectedModel(id);setSelected(id);setTest(null);};\n const runTest=async()=>{setTesting(true);setTest(null);setTest(await testConnection(selectedModel));setTesting(false);};
+ const chooseModel=(id:string)=>{setSelectedModel(id);setSelected(id);setTest(null);};
+ const runTest=async()=>{setTesting(true);setTest(null);setTest(await testConnection(selectedModel));setTesting(false);};
  return <div className="space-y-6 animate-fade-in">
  <div><h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🔐</span> Koneksi & Pengaturan</h2><p className="text-sm text-[#91a0b5] mt-1">Kelola akses dashboard dan koneksi Xingchi. Secret hanya disimpan di server Netlify.</p></div>
  <section className="card-glow space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Akses dashboard</h3><span className={config?.sessionValid?'badge badge-success':'badge badge-warning'}>{config?.sessionValid?'Login aktif':'Belum login'}</span></div>
