@@ -52,6 +52,7 @@ export default function Settings() {
   };
 
   const handleSave = async () => {
+    if (provider === 'crowllm' && (!crowllmSynced || !crowllmModels.some(item => item.id === model))) { showToast('error', 'Sinkronkan katalog CrowLLM dan pilih model chat yang terverifikasi dulu'); return; }
     if (!apiKey.trim()) { showToast('error', 'API Key tidak boleh kosong'); return; }
     if (!model) { showToast('error', 'Pilih model yang tersedia terlebih dahulu'); return; }
     setSaving(true);
@@ -98,6 +99,7 @@ export default function Settings() {
   };
 
   const handleTest = async () => {
+    if (provider === 'crowllm' && (!crowllmSynced || !crowllmModels.some(item => item.id === model))) { showToast('error', 'Sinkronkan katalog CrowLLM dan pilih model chat yang terverifikasi dulu'); return; }
     const keyToTest = apiKey.trim() || keys.find(k => k.provider === provider)?.api_key || '';
     if (!keyToTest) { showToast('error', 'Masukkan API Key dulu'); return; }
     if (!model) { showToast('error', 'Pilih model yang tersedia terlebih dahulu'); return; }
