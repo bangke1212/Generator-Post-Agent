@@ -12,7 +12,7 @@ Generate viral-ready tweets optimized for the **X Algorithm 2026** — not gener
 - **Reply Bait Strategy** — End every tweet with questions that spark conversation (the +75 signal)
 - **Anti-Bot Filter** — Post-processing removes robotic phrases, adds natural paragraph spacing
 - **Multi-Tone Support** — Supportif, Debate, Kritik Pedas (each with tone-specific emoji guidelines)
-- **Multi-Provider** — OpenRouter (free models), OpenAI, Gemini, Groq, Agnes AI, Custom API
+- **Multi-Provider** — CrowLLM (free model catalogue), OpenRouter, OpenAI, Gemini, Groq, Xingchi AI, Custom API
 
 ## 🧠 Why This Matters (X Algorithm 2026)
 
@@ -52,6 +52,20 @@ npm run build
 - `google/gemini-2.0-flash-001` — Best free model
 - `meta-llama/llama-3.3-70b-instruct` — Great for Indonesian
 - `deepseek/deepseek-r1-distill-llama-70b` — Deep reasoning
+
+### CrowLLM Free Models
+
+CrowLLM uses the OpenAI-compatible base URL `https://crowllm.com/v1`. Add your CrowLLM key in **API Providers → CrowLLM**.
+
+The app includes a curated free chat-model list:
+- `deepseek-v4-flash-uncensored:free`
+- `caw/glm-5.3-flash:free`
+- `agnes-2.5-flash:free`
+- `laguna-s-2-1:free`
+
+Use **Sinkronkan model free** in Settings to call `GET /v1/models` and intersect the catalogue with models available to your key. The list is intentionally limited to chat models; embedding, reranking, and text-to-speech models are not valid choices for post generation.
+
+**Availability note:** Free status, upstream capacity, account eligibility, and rate limits can change. Check the [CrowLLM live status](https://crowllm.com/status) and each [model page](https://crowllm.com/models) before relying on a model. A model being listed does not guarantee that it is currently serving requests.
 
 ## 📁 Project Structure
 
