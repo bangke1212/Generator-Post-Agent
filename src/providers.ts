@@ -130,18 +130,55 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
   const { provider, apiKey, baseUrl, model, prompt, maxTokens, temperature } = params;
 
   const preset = PROVIDER_PRESETS[provider];
-  if (!preset) throw new Error(`Provider ${provider} tidak dikenal`);
+  if (!preset) throw new Error(\`Provider \${provider} tidak dikenal\`);
 
   const endpoint = baseUrl || preset.baseUrl;
-  if (!endpoint) throw new Error(`Base URL tidak diatur untuk ${provider}`);
+  if (!endpoint) throw new Error(\`Base URL tidak diatur untuk \${provider}\`);
+
+  const optimal = getModelParams(provider, model);
+
+  // Xingchi is called through a same-origin Vercel function to avoid browser CORS failures.
+  if (provider === 'xingchi') {
+    let response: Response;
+    try {
+      response = await fetch('/api/xingchi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey,
+          model,
+          prompt,
+          maxTokens: maxTokens || optimal.maxTokens,
+          temperature: temperature ?? optimal.temperature,
+        }),
+      });
+    } catch {
+      throw new Error('Tidak dapat menghubungi backend Vercel (/api/xingchi). Pastikan deployment terbaru sudah selesai.');
+    }
+
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error(\`Backend Xingchi mengembalikan respons tidak valid (HTTP \${response.status}). Periksa deployment fungsi Vercel.\`);
+    }
+    if (!response.ok) {
+      throw new Error(data?.error?.message || \`Xingchi API gagal (HTTP \${response.status})\`);
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      throw new Error('Xingchi merespons tanpa teks. Periksa model dan format respons API.');
+    }
+    return { content, provider: preset.name, model };
+  }
 
   const openai = new OpenAI({
     apiKey,
     baseURL: endpoint,
     dangerouslyAllowBrowser: true,
   });
-
-  const optimal = getModelParams(provider, model);
 
   const res = await openai.chat.completions.create({
     model,
