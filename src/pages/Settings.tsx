@@ -83,8 +83,8 @@ export default function Settings() {
       setCrowllmModels(models);
       setCrowllmSynced(true);
       if (models.length > 0) {
-        setModel(models[0].id);
-        setModelSyncMessage(`${models.length} model gratis tersedia untuk API key ini.`);
+        setModel(models.some(item => item.id === model) ? model : models[0].id);
+        setModelSyncMessage(`${models.length} model gratis chat terverifikasi tersedia untuk API key ini. Status dan latency diambil dari CrowLLM.`);
         showToast('success', `${models.length} model gratis CrowLLM berhasil disinkronkan.`);
       } else {
         setModel('');
@@ -130,9 +130,20 @@ export default function Settings() {
   };
 
   // Current model info for tooltip
-  const modelProfile = getModelProfile(provider, model);
+  const modelProfile = provider === 'crowllm'
+    ? crowllmModels.find(item => item.id === model) || null
+    : getModelProfile(provider, model);
   const presetModels = (PROVIDER_PRESETS as any)[provider]?.models || [];
-  const modelOptions: ModelConfig[] = provider === 'crowllm' && crowllmSynced ? crowllmModels : presetModels;
+  const modelOptions: ModelConfig[] = provider === 'crowllm'
+    ? (crowllmSynced ? crowllmModels : [])
+    : presetModels;
+  const crowllmStatusLabels: Record<string, string> = {
+    healthy: 'Stabil',
+    degraded: 'Menurun',
+    unstable: 'Bermasalah',
+    unavailable: 'Tidak tersedia',
+    no_data: 'Belum ada data',
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -206,10 +217,32 @@ export default function Settings() {
           </div>
           {provider === 'crowllm' && (
             <p className="text-xs text-[#666680] mt-2">
-              Model katalog awal hanya yang terverifikasi gratis. Sinkronkan untuk memastikan model tersebut tersedia pada API key akunmu.{' '}
-              <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live</a>.
+              Daftar model diambil langsung dari <code>/v1/models</code>. Setiap kandidat diperiksa ke halaman model CrowLLM: harga input/output harus $0 dan endpoint chat completions harus tersedia.{' '}
+              <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live CrowLLM</a>.
               {modelSyncMessage && <span className="block mt-1 text-[#9494b8]">{modelSyncMessage}</span>}
             </p>
+            {crowllmSynced && (
+              <div className="mt-3 rounded-xl border border-[#263448] bg-[#0b121e] p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#91a0b5]">Status model · 24 jam</span>
+                  <span className="text-[10px] text-[#66758a]">Data CrowLLM</span>
+                </div>
+                {crowllmModels.map(item => {
+                  const status = item.status || 'no_data';
+                  const statusColor = status === 'healthy' ? 'text-[#34d399]' : status === 'degraded' ? 'text-[#fbbf24]' : status === 'unstable' || status === 'unavailable' ? 'text-[#f87171]' : 'text-[#91a0b5]';
+                  const latency = item.averageLatencyMs == null ? 'Latency —' : item.averageLatencyMs >= 1000 ? `Latency ${(item.averageLatencyMs / 1000).toFixed(1)} dtk` : `Latency ${Math.round(item.averageLatencyMs)} ms`;
+                  return (
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-[#202b3c] pt-2 first:border-0 first:pt-0">
+                      <span className="min-w-0 flex-1 break-all text-[11px] text-[#d4dce7]">{item.id}</span>
+                      <span className={`text-[10px] font-semibold ${statusColor}`}>{crowllmStatusLabels[status]}</span>
+                      <span className="text-[10px] text-[#91a0b5]">{item.successRate == null ? 'Success —' : `Success ${item.successRate.toFixed(1)}%`}</span>
+                      <span className="text-[10px] text-[#91a0b5]">{latency}</span>
+                    </div>
+                  );
+                })}
+                {crowllmModels.length === 0 && <p className="text-xs text-[#fbbf24]">Tidak ada model gratis yang lolos verifikasi endpoint chat.</p>}
+              </div>
+            )}
           )}
         </div>
 
