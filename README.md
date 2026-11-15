@@ -18,12 +18,12 @@ npx netlify dev
 
 ## Environment variables Netlify
 Atur di Site configuration → Environment variables:
-- `XINGCHI_API_KEY`: API key Xingchi yang baru.
+- `APP_ACCESS_PASSWORD`: password untuk membuka dashboard.\n- `APP_SESSION_SECRET`: rahasia acak panjang (minimal 32 karakter) untuk menandatangani cookie sesi.\n- `XINGCHI_API_KEY`: API key Xingchi yang baru.
 - `XINGCHI_BASE_URL`: default `https://api.xingchiapi.com/v1`.
 - `XINGCHI_MODEL`: default `gpt-6.1-sol`; pastikan alias ini tersedia pada akun Xingchi.
 - `X_USER_ACCESS_TOKEN` (opsional): OAuth 2.0 User Context token X dengan scope `tweet.write` untuk publikasi langsung.
 
-Setelah mengubah environment variables, lakukan redeploy. Jangan pernah menaruh secret di `VITE_*`, source frontend, atau Git.
+Setelah mengubah environment variables, lakukan redeploy. Login dashboard tersedia pada menu Koneksi & Pengaturan; sesi berlaku 7 hari. Jangan pernah menaruh secret di `VITE_*`, source frontend, atau Git.
 
 ## Deploy
 Import repository ini di Netlify. Build command `npm run build`, publish directory `dist`; konfigurasi sudah tersedia di `netlify.toml`.
