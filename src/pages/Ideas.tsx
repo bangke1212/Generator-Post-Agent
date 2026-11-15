@@ -37,9 +37,9 @@ export default function Ideas({ onTabChange }: Props) {
     try {
       const result = await generateIdeas({ idea: idea.trim(), language: lang, tone, count });
       if (result.provider === 'none') {
-        setError('Silakan login di Koneksi & Pengaturan dan pastikan XINGCHI_API_KEY sudah diatur di Netlify.');
+        setError('Silakan login di Koneksi & Pengaturan dan pastikan XINGCHI_API_KEY sudah diatur di Vercel.');
       } else if (result.provider === 'error') {
-        setError('Koneksi AI gagal. Periksa sesi login dan konfigurasi Xingchi di Netlify.');
+        setError('Koneksi AI gagal. Periksa sesi login dan konfigurasi Xingchi di Vercel.');
       } else if (result.ideas.length === 0) {
         setError('Xingchi tidak mengembalikan ide. Coba lagi atau periksa konfigurasi model.');
       }
@@ -53,7 +53,7 @@ export default function Ideas({ onTabChange }: Props) {
     setPosting(item.id);
     const saved = insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
     try {
-      const response = await fetch('/.netlify/functions/publish', {
+      const response = await fetch('/api/publish', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: item.content })
       });
