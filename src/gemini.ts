@@ -255,7 +255,7 @@ REPLY BAIT: "Relate angkat tangan 💀", "Yang ngerasa kena, sini ngaku 👇"`,
 export async function generateIdeas(opts: { idea: string; language?: string; tone?: string; count?: number }) {
   const { idea, language = 'id', tone = 'supportif', count = 5 } = opts;
   const provider = 'xingchi';
-  const model = 'gpt-6.1-sol';
+  const model = getSelectedModel();
 
   const normalizedLanguage = language === 'en' ? 'en' : 'id';
   const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
