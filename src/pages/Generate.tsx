@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { generateContent } from '../gemini';
-import { insertPost } from '../store';
+import { insertPost, updatePost } from '../store';
 
 interface Props { onTabChange: (tab: string) => void; }
 
@@ -11,6 +11,7 @@ export default function Generate({ onTabChange }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ content: string; emoji_count: number; topic: string; provider?: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState('');
 
   const handleGenerate = async () => {
@@ -37,6 +38,27 @@ export default function Generate({ onTabChange }: Props) {
     navigator.clipboard.writeText(result.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePublish = async () => {
+    if (!result) return;
+    setPublishing(true);
+    const saved = insertPost({ content: result.content, topic: result.topic, emoji_count: result.emoji_count });
+    try {
+      const response = await fetch('/.netlify/functions/publish', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: result.content })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Publikasi gagal');
+      updatePost(saved.id, { status: 'posted', tweet_id: data.id });
+      setResult(null);
+      alert('Post berhasil dipublikasikan ke X.');
+      if (data.url) window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      updatePost(saved.id, { status: 'failed' });
+      setError('Draft tersimpan, tetapi belum berhasil diposting: ' + (e instanceof Error ? e.message : 'Kesalahan tidak diketahui'));
+    } finally { setPublishing(false); }
   };
 
   return (
@@ -77,7 +99,8 @@ export default function Generate({ onTabChange }: Props) {
             <button onClick={handleCopy} className="absolute top-3 right-3 btn-ghost text-xs opacity-0 group-hover:opacity-100">{copied ? '✅' : '📋'}</button>
           </div>
           <div className="flex gap-3">
-            <button onClick={handleSave} className="btn-accent flex-1"><span className="text-lg mr-1">💾</span> Simpan ke History</button>
+            <button onClick={handleSave} className="btn-outline flex-1"><span className="text-lg mr-1">💾</span> Simpan Draft</button>
+            <button onClick={handlePublish} disabled={publishing} className="btn-accent flex-1">{publishing ? 'Memposting…' : '↗ Publikasikan ke X'}</button>
             <button onClick={handleGenerate} className="btn-outline flex-1">🔄 Generate Ulang</button>
           </div>
         </div>
