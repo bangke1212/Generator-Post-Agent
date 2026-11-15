@@ -12,6 +12,10 @@ export interface ModelConfig {
   maxTokens: number;
   strengths: string[];
   bestFor: string;
+  status?: 'healthy' | 'degraded' | 'unstable' | 'unavailable' | 'no_data';
+  successRate?: number | null;
+  averageLatencyMs?: number | null;
+  requests24h?: number | null;
 }
 
 export interface ProviderConfig {
@@ -24,14 +28,7 @@ export interface ProviderConfig {
   rateLimitNote?: string;
 }
 
-export const CROWLLM_FREE_MODELS: ModelConfig[] = [
-  { id: 'deepseek-v4-flash-uncensored:free', name: '🆓 DeepSeek V4 Flash Uncensored', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['creative', 'deep_reasoning', 'debate'], bestFor: 'Reasoning dan opini tajam.' },
-  { id: 'caw/glm-5.3-flash:free', name: '🆓 GLM 5.3 Flash', free: true, temperature: 0.85, maxTokens: 1400, strengths: ['natural_id', 'structured', 'reasoning'], bestFor: 'Post Bahasa Indonesia dan ide terstruktur.' },
-  { id: 'glm-4.7-flash:free', name: '🆓 GLM 4.7 Flash', free: true, temperature: 0.85, maxTokens: 1400, strengths: ['natural_id', 'structured', 'reasoning'], bestFor: 'Draft cepat dan penulisan umum.' },
-  { id: 'glm-4.6v-flash:free', name: '🆓 GLM 4.6V Flash', free: true, temperature: 0.82, maxTokens: 1200, strengths: ['multilingual', 'reasoning', 'vision'], bestFor: 'Analisis gambar dan penulisan multimodal.' },
-  { id: 'agnes-2.5-flash:free', name: '🆓 Agnes 2.5 Flash', free: true, temperature: 0.86, maxTokens: 1400, strengths: ['creative', 'natural_id', 'fast'], bestFor: 'Draft cepat dan konten kreatif.' },
-  { id: 'laguna-s-2-1:free', name: '🆓 Laguna S 2.1', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['reasoning', 'structured', 'technical'], bestFor: 'Konten analitis dan terstruktur.' },
-];
+export const CROWLLM_FREE_MODELS: ModelConfig[] = [];
 
 export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfig[]> {
   let response: Response;
@@ -48,12 +45,24 @@ export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfi
   if (!response.ok) {
     throw new Error(payload?.error?.message || `Backend CrowLLM gagal (HTTP ${response.status}).`);
   }
-  const available = new Set<string>(
-    Array.isArray(payload?.data)
-      ? payload.data.map((item: { id?: unknown }) => item?.id).filter((id: unknown): id is string => typeof id === 'string')
-      : [],
-  );
-  return CROWLLM_FREE_MODELS.filter(model => available.has(model.id));
+  if (!Array.isArray(payload?.models)) {
+    throw new Error('Respons katalog CrowLLM tidak berisi daftar model yang valid.');
+  }
+  return payload.models
+    .filter((item: any) => typeof item?.id === 'string' && item.free === true)
+    .map((item: any): ModelConfig => ({
+      id: item.id,
+      name: item.id,
+      free: true,
+      temperature: 0.82,
+      maxTokens: 1400,
+      strengths: ['chat'],
+      bestFor: 'Verified free CrowLLM chat model.',
+      status: item.status || 'no_data',
+      successRate: typeof item.successRate === 'number' ? item.successRate : null,
+      averageLatencyMs: typeof item.averageLatencyMs === 'number' ? item.averageLatencyMs : null,
+      requests24h: typeof item.requests24h === 'number' ? item.requests24h : null,
+    }));
 }
 
 export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
@@ -78,7 +87,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     baseUrl: 'https://crowllm.com/v1',
     docs: 'https://crowllm.com/keys',
     rateLimitNote: 'Model gratis yang tersedia untuk API key akan disinkronkan dari GET /v1/models. Cek status live sebelum digunakan.',
-    models: CROWLLM_FREE_MODELS,
+    models: [],
   },
   openai: {
     name: 'OpenAI',
