@@ -4,7 +4,6 @@ export const PROVIDER_PRESETS:Record<string,ProviderConfig>={
  xingchi:{name:'OpenAI · via Xingchi',icon:'✦',baseUrl:'https://api.xingchiapi.com/v1',docs:'https://xingchiapi.com/dashboard',rateLimitNote:'Model yang tersedia mengikuti paket dan daftar model pada akun Xingchi Anda.',models:[
   {id:'gpt-6-astra',name:'GPT-6 Astra',temperature:0.9,maxTokens:1600,strengths:['creative','natural_id','reasoning','deep_reasoning','debate'],bestFor:'Hook kuat, ide orisinal, opini tajam, dan variasi konten kompleks.',recommendation:'Kualitas terbaik'},
   {id:'gpt-6.1-sol',name:'GPT-6.1 Sol',temperature:0.85,maxTokens:1400,strengths:['creative','natural_id','reasoning'],bestFor:'Generator post harian dengan keseimbangan kualitas dan biaya.',recommendation:'Rekomendasi utama'},
-  {id:'gpt-6.1-terra',name:'GPT-6.1 Terra',temperature:0.85,maxTokens:1200,strengths:['natural_id','creative'],bestFor:'Copywriting natural, ringkas, dan cepat.',recommendation:'Natural & cepat'},
   {id:'gpt-6-sol',name:'GPT-6 Sol',temperature:0.85,maxTokens:1400,strengths:['creative','natural_id','reasoning'],bestFor:'Alternatif serbaguna untuk ide dan post.',recommendation:'Serbaguna'},
   {id:'gpt-6-luna',name:'GPT-6 Luna',temperature:0.8,maxTokens:1000,strengths:['natural_id','creative'],bestFor:'Draft singkat dan penggunaan rutin yang lebih hemat.',recommendation:'Hemat untuk volume'}
  ]}};
