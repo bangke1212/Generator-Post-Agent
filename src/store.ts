@@ -87,7 +87,7 @@ export function insertPost(post: Omit<Post, 'id' | 'status' | 'posted_at' | 'twe
 export function updatePost(id: number, update: Partial<Pick<Post, 'status' | 'tweet_id' | 'posted_at'>>) {
   const store = loadStore();
   const post = store.posts.find(p => p.id === id);
-  if (post) Object.assign(post, update, { posted_at: new Date().toISOString() });
+  if (post) Object.assign(post, update, update.status === 'posted' ? { posted_at: new Date().toISOString() } : {});
   saveStore(store);
 }
 
