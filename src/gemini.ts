@@ -2,7 +2,7 @@
 // X Algorithm 2026 — ALL-TIMELINE COVERAGE
 // For You Feed + Following Feed + Explore/Trending
 
-import { callAI, getModelParams, getModelProfile } from './providers';
+import { callAI, getModelParams, getModelProfile, getSelectedModel } from './providers';
 
 export interface GeneratedIdea {
   id: number;
@@ -178,7 +178,7 @@ function getLanguageInstructions(language: string) {
 export async function generateContent(opts: { topic?: string; language?: string; tone?: string }) {
   const { topic = 'general', language = 'id' } = opts;
   const provider = 'xingchi';
-  const model = 'gpt-6.1-sol';
+  const model = getSelectedModel();
 
   const normalizedLanguage = language === 'en' ? 'en' : 'id';
   const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
