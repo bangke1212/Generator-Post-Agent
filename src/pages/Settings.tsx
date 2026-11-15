@@ -52,7 +52,6 @@ export default function Settings() {
   };
 
   const handleSave = async () => {
-    if (provider === 'crowllm' && (!crowllmSynced || !crowllmModels.some(item => item.id === model))) { showToast('error', 'Sinkronkan katalog CrowLLM dan pilih model chat yang terverifikasi dulu'); return; }
     if (!apiKey.trim()) { showToast('error', 'API Key tidak boleh kosong'); return; }
     if (!model) { showToast('error', 'Pilih model yang tersedia terlebih dahulu'); return; }
     setSaving(true);
@@ -65,10 +64,6 @@ export default function Settings() {
   // Update model only — keep existing API key, just change active model
   const handleModelChange = (newModel: string) => {
     setModel(newModel);
-    if (provider === 'crowllm' && (!crowllmSynced || !crowllmModels.some(item => item.id === newModel))) {
-      showToast('info', 'Model ini masih kandidat. Masukkan API key lalu sinkronkan katalog sebelum menyimpan atau menggunakannya.');
-      return;
-    }
     const existingKey = keys.find(k => k.provider === provider);
     if (existingKey) {
       // Auto-save model change if key already exists (no need to re-enter key)
@@ -102,14 +97,13 @@ export default function Settings() {
         setModelSyncMessage(`Belum ada model gratis yang berhasil diverifikasi untuk API key ini. Kandidat tetap ditampilkan sebagai pilihan awal, tetapi belum bisa dipakai. ${catalogNotes} Periksa key, scope, atau coba sinkronkan lagi.`.trim());
       }
     } catch (e: any) {
-      setModelSyncMessage(e.message || 'Gagal mengambil daftar model CrowLLM.');
+      setModelSyncMessage(`Katalog opsional tidak tersedia: ${e.message || 'gagal mengambil daftar model CrowLLM.'} Anda tetap dapat menyimpan model dan memvalidasinya lewat Test Koneksi.`);
     } finally {
       setSyncingModels(false);
     }
   };
 
   const handleTest = async () => {
-    if (provider === 'crowllm' && (!crowllmSynced || !crowllmModels.some(item => item.id === model))) { showToast('error', 'Sinkronkan katalog CrowLLM dan pilih model chat yang terverifikasi dulu'); return; }
     const keyToTest = apiKey.trim() || keys.find(k => k.provider === provider)?.api_key || '';
     if (!keyToTest) { showToast('error', 'Masukkan API Key dulu'); return; }
     if (!model) { showToast('error', 'Pilih model yang tersedia terlebih dahulu'); return; }
@@ -226,7 +220,7 @@ export default function Settings() {
             </select>
             {provider === 'crowllm' && (
               <button onClick={handleSyncCrowllmModels} disabled={syncingModels} className="btn-outline text-xs whitespace-nowrap">
-                {syncingModels ? 'Memuat...' : '↻ Sinkronkan model free'}
+                {syncingModels ? 'Memuat...' : '↻ Muat katalog (opsional)'}
               </button>
             )}
           </div>
@@ -234,8 +228,8 @@ export default function Settings() {
             <div>
             <p className="text-xs text-[#666680] mt-2">
               {crowllmSynced
-                ? 'Daftar model tersedia berasal dari /v1/models dan hanya lolos jika harga input/output $0 serta endpoint chat tersedia.'
-                : `${CROWLLM_FREE_MODELS.length} model rekomendasi ditampilkan sebagai kandidat awal; belum diverifikasi untuk API key Anda. Masukkan key lalu sinkronkan sebelum menyimpan atau menggunakannya.`}{' '}
+                ? 'Daftar model tambahan berasal dari /v1/models. Katalog ini opsional; Test Koneksi memvalidasi model langsung melalui endpoint chat.'
+                : `${CROWLLM_FREE_MODELS.length} model rekomendasi ditampilkan sebagai kandidat awal. Anda dapat langsung menyimpan dan menguji model dengan API key melalui Test Koneksi.`}{' '}
               Tier Free memiliki batas umum beberapa panggilan per menit; CrowLLM tidak mencantumkan RPM khusus per model.{' '}
               <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live CrowLLM</a>.
               {modelSyncMessage && <span className="block mt-1 text-[#9494b8]">{modelSyncMessage}</span>}
