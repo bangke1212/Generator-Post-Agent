@@ -1,13 +1,13 @@
 const hex=(buffer:ArrayBuffer)=>Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
 async function validSession(request:Request){
  const secret=Netlify.env.get('APP_SESSION_SECRET');if(!secret)return false;
- const raw=request.headers.get('cookie')||'',match=raw.match(/(?:^|;\\s*)postpilot_session=([^;]+)/);if(!match)return false;
+ const raw=request.headers.get('cookie')||'',match=raw.match(/(?:^|;\s*)postpilot_session=([^;]+)/);if(!match)return false;
  const [expiry,signature]=decodeURIComponent(match[1]).split('.');if(!expiry||!signature||Number(expiry)<Date.now())return false;
  const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
  const expected=hex(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(expiry)));
  return expected===signature;
 }
-const ALLOWED_MODELS=new Set(['gpt-6-astra','gpt-6.1-sol','gpt-6.1-terra','gpt-6-sol','gpt-6-luna']);
+const ALLOWED_MODELS=new Set(['gpt-6-astra','gpt-6.1-sol','gpt-6-sol','gpt-6-luna']);
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
 export default async(request:Request)=>{
  if(request.method!=='POST')return json({error:'Method not allowed'},405);
@@ -15,7 +15,7 @@ export default async(request:Request)=>{
  const apiKey=Netlify.env.get('XINGCHI_API_KEY');if(!apiKey)return json({error:'XINGCHI_API_KEY belum diatur di Netlify Environment Variables.'},503);
  let input:any;try{input=await request.json();}catch{return json({error:'Body JSON tidak valid.'},400);}
  const prompt=typeof input.prompt==='string'?input.prompt.slice(0,18000):'';if(!prompt.trim())return json({error:'Prompt tidak boleh kosong.'},400);
- const baseUrl=(Netlify.env.get('XINGCHI_BASE_URL')||'https://api.xingchiapi.com/v1').replace(/\\/+$/,'');
+ const baseUrl=(Netlify.env.get('XINGCHI_BASE_URL')||'https://api.xingchiapi.com/v1').replace(/\/+$/,'');
  const configured=Netlify.env.get('XINGCHI_MODEL')||'gpt-6.1-sol';
  const requested=typeof input.model==='string'?input.model:configured;
  const model=ALLOWED_MODELS.has(requested)?requested:configured;
