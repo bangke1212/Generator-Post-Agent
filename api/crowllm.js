@@ -119,7 +119,7 @@ async function getFreeChatModels(apiKey) {
 
   const verified = detailPages.filter(Boolean).map(({ id, html: detailHtml }) => {
     const detailText = htmlText(detailHtml);
-    const hasChatEndpoint = /\\/v1\\/chat\\/completions|\\bchat\\s*completions\\b/i.test(detailHtml);
+    const hasChatEndpoint = /\/v1\/chat\/completions|\bchat\s*completions\b/i.test(detailHtml);
     const explicitlyFree = zeroPrice(detailText, 'Input') && zeroPrice(detailText, 'Output');
     if (!explicitlyFree || !hasChatEndpoint) return null;
 
