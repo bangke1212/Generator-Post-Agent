@@ -41,7 +41,7 @@ function parseMetrics(html, modelId) {
   const context = index >= 0
     ? text.slice(Math.max(0, index - 500), index + 2200)
     : text;
-  const successMatch = context.match(/(?:success rate|served within 24 hours)[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)\s*%/i);
+  const successMatch = context.match(/(?:success rate|served within 24 hours)[^%]{0,90}?([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const latencyMatch = context.match(/(?:average latency|whole response time|latency)[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|seconds)?/i);
   const requestsMatch = context.match(/requests?\s*(?:\(24h\))?[^0-9]{0,30}([0-9,]+)/i);
   let averageLatencyMs = null;
