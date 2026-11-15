@@ -104,7 +104,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     baseUrl: 'https://crowllm.com/v1',
     docs: 'https://crowllm.com/keys',
     rateLimitNote: 'Tier Free CrowLLM membatasi penggunaan hingga beberapa panggilan per menit; limit RPM khusus tiap model tidak dipublikasikan. Model yang terverifikasi untuk API key Anda disinkronkan dari GET /v1/models.',
-    models: [],
+    models: CROWLLM_FREE_MODELS,
   },
   openai: {
     name: 'OpenAI',

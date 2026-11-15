@@ -57,7 +57,7 @@ npm run build
 
 CrowLLM uses the OpenAI-compatible base URL `https://crowllm.com/v1`. Add your CrowLLM key in **API Providers → CrowLLM**, then click **Sinkronkan model free**.
 
-The app retrieves the account-visible IDs directly from `GET /v1/models`. The `:free` suffix is used only to identify candidates, not as proof that a model is suitable: the Vercel proxy checks each candidate's official CrowLLM model page and includes it only when both input/output prices are zero and the page exposes the `/v1/chat/completions` endpoint. Embedding, reranking, speech, and other non-chat models are excluded. The selected model ID is the exact ID returned by CrowLLM.
+Before synchronization, Settings shows the 10 curated IDs below as unverified candidates. After synchronization, only IDs visible to the supplied API key and verified by the Vercel proxy are selectable for saving/testing. The proxy reads account-visible IDs from `GET /v1/models`; the `:free` suffix is only a discovery hint, not proof of zero cost. Each candidate must have zero input/output price and a chat-completions endpoint. Embedding, reranking, speech, and other non-chat models are excluded.
 
 These 10 curated models are highlighted with ★ when they are available to the supplied key and pass the same live price/endpoint checks: `agnes-2.5-flash:free`, `beam-1.0:free`, `caw/glm-5.3-flash:free`, `crouton-alpha:free`, `crow-code-limitless:free`, `crow/auto:free`, `minimax-m3.1-flash:free`, `muse-spark-1.1:free`, `nvidia/nemotron-3.5-bolt-e4b:free`, and `deepseek-v4.1-flash-uncensored:free`. `crow/auto:free` is an automatic router, not one fixed underlying model. Availability can vary by API key and can change over time.
 

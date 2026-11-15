@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAllApiKeys, saveApiKey, deleteApiKey, ApiKey, getActiveApiKey } from '../store';
-import { PROVIDER_PRESETS, getModelProfile, testConnection, fetchCrowllmFreeModels, ModelConfig } from '../providers';
+import { PROVIDER_PRESETS, CROWLLM_FREE_MODELS, getModelProfile, testConnection, fetchCrowllmFreeModels, ModelConfig } from '../providers';
 
 export default function Settings() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
@@ -65,6 +65,10 @@ export default function Settings() {
   // Update model only — keep existing API key, just change active model
   const handleModelChange = (newModel: string) => {
     setModel(newModel);
+    if (provider === 'crowllm' && (!crowllmSynced || !crowllmModels.some(item => item.id === newModel))) {
+      showToast('info', 'Model ini masih kandidat. Masukkan API key lalu sinkronkan katalog sebelum menyimpan atau menggunakannya.');
+      return;
+    }
     const existingKey = keys.find(k => k.provider === provider);
     if (existingKey) {
       // Auto-save model change if key already exists (no need to re-enter key)
@@ -134,11 +138,11 @@ export default function Settings() {
 
   // Current model info for tooltip
   const modelProfile = provider === 'crowllm'
-    ? crowllmModels.find(item => item.id === model) || null
+    ? crowllmModels.find(item => item.id === model) || CROWLLM_FREE_MODELS.find(item => item.id === model) || null
     : getModelProfile(provider, model);
   const presetModels = (PROVIDER_PRESETS as any)[provider]?.models || [];
   const modelOptions: ModelConfig[] = provider === 'crowllm'
-    ? (crowllmSynced ? crowllmModels : [])
+    ? (crowllmSynced ? crowllmModels : CROWLLM_FREE_MODELS)
     : presetModels;
   const crowllmStatusLabels: Record<string, string> = {
     healthy: 'Stabil',
@@ -208,6 +212,9 @@ export default function Settings() {
           <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">Model</label>
           <div className="flex flex-col sm:flex-row gap-2">
             <select value={model} onChange={e => handleModelChange(e.target.value)} className="input flex-1" disabled={modelOptions.length === 0}>
+              {model && !modelOptions.some(item => item.id === model) && (
+                <option value={model}>{model} · perlu sinkronisasi</option>
+              )}
               {modelOptions.map((m: ModelConfig) => (
                 <option key={m.id} value={m.id}>{m.recommended ? `★ ${m.id} · rekomendasi` : m.name}</option>
               ))}
@@ -221,7 +228,10 @@ export default function Settings() {
           {provider === 'crowllm' && (
             <div>
             <p className="text-xs text-[#666680] mt-2">
-              Daftar diambil dari <code>/v1/models</code> dan divalidasi: harga input/output harus $0 serta endpoint chat tersedia. Sepuluh model rekomendasi ditandai ★ bila tersedia untuk API key ini. Tier Free memiliki batas umum beberapa panggilan per menit; CrowLLM tidak mencantumkan RPM khusus per model.{' '}
+              {crowllmSynced
+                ? 'Daftar model tersedia berasal dari /v1/models dan hanya lolos jika harga input/output $0 serta endpoint chat tersedia.'
+                : 'Sepuluh model rekomendasi ditampilkan sebagai kandidat awal; belum diverifikasi untuk API key Anda. Masukkan key lalu sinkronkan sebelum menyimpan atau menggunakannya.'}{' '}
+              Tier Free memiliki batas umum beberapa panggilan per menit; CrowLLM tidak mencantumkan RPM khusus per model.{' '}
               <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live CrowLLM</a>.
               {modelSyncMessage && <span className="block mt-1 text-[#9494b8]">{modelSyncMessage}</span>}
             </p>
@@ -276,7 +286,15 @@ export default function Settings() {
 
         <div>
           <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">API Key</label>
-          <input type="password" value={apiKey} onChange={e => { setApiKey(e.target.value); if (provider === 'crowllm') setCrowllmSynced(false); }}
+          <input type="password" value={apiKey} onChange={e => {
+            setApiKey(e.target.value);
+            if (provider === 'crowllm') {
+              setCrowllmSynced(false);
+              setCrowllmModels([]);
+              setModelSyncMessage('');
+              if (!CROWLLM_FREE_MODELS.some(item => item.id === model)) setModel(CROWLLM_FREE_MODELS[0]?.id || '');
+            }
+          }}
             placeholder={`${(PROVIDER_PRESETS as any)[provider]?.name || ''} API Key...`} className="input font-mono text-sm" />
           {(PROVIDER_PRESETS as any)[provider]?.docs && (
             <a href={(PROVIDER_PRESETS as any)[provider].docs} target="_blank" rel="noopener"
