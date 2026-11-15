@@ -7,9 +7,11 @@ async function validSession(request:Request){
  const expected=hex(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(expiry)));
  return expected===signature;
 }
-\nconst json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
+
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
 export default async(request:Request)=>{
- if(request.method!=='POST')return json({error:'Method not allowed'},405);\n if(!await validSession(request))return json({error:'Silakan login ke dashboard terlebih dahulu.'},401);
+ if(request.method!=='POST')return json({error:'Method not allowed'},405);
+ if(!await validSession(request))return json({error:'Silakan login ke dashboard terlebih dahulu.'},401);
  const apiKey=Netlify.env.get('XINGCHI_API_KEY');if(!apiKey)return json({error:'XINGCHI_API_KEY belum diatur di Netlify Environment Variables.'},503);
  let input:any;try{input=await request.json();}catch{return json({error:'Body JSON tidak valid.'},400);}
  const prompt=typeof input.prompt==='string'?input.prompt.slice(0,18000):'';if(!prompt.trim())return json({error:'Prompt tidak boleh kosong.'},400);
