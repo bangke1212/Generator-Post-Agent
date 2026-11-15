@@ -1,5 +1,6 @@
 // Same-origin proxy for CrowLLM. Keeps browser CORS out of the request path.
 const CROWLLM = 'https://crowllm.com';
+export const config = { maxDuration: 30 };
 
 function decodeHtml(value) {
   return value.replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
@@ -87,7 +88,7 @@ async function mapWithConcurrency(items, limit, mapper) {
 async function getFreeChatModels(apiKey) {
   const response = await fetch(CROWLLM + '/v1/models', {
     headers: { Authorization: 'Bearer ' + apiKey },
-    signal: AbortSignal.timeout(20000),
+    signal: AbortSignal.timeout(10000),
     cache: 'no-store',
   });
   const payloadText = await response.text();
@@ -107,13 +108,18 @@ async function getFreeChatModels(apiKey) {
   const candidates = rows.filter(item => typeof item?.id === 'string' && (item.id.endsWith(':free') || hasZeroPricingMetadata(item))).map(item => item.id);
   if (!candidates.length) return [];
 
-  let statusHtml = '';
-  try { statusHtml = await fetchText(CROWLLM + '/status', 20000); } catch {}
+  // Fetch the public status page and model detail pages concurrently.
+  // The suffix is only a discovery hint: page pricing and chat endpoint are still verified.
+  const statusPromise = fetchText(CROWLLM + '/status', 10000).catch(() => '');
+  const detailPagesPromise = mapWithConcurrency(candidates, 12, async id => ({
+    id,
+    html: await fetchText(CROWLLM + '/models/' + encodeURIComponent(id), 10000),
+  }));
+  const [statusHtml, detailPages] = await Promise.all([statusPromise, detailPagesPromise]);
 
-  const verified = await mapWithConcurrency(candidates, 6, async id => {
-    const detailHtml = await fetchText(CROWLLM + '/models/' + encodeURIComponent(id));
+  const verified = detailPages.filter(Boolean).map(({ id, html: detailHtml }) => {
     const detailText = htmlText(detailHtml);
-    const hasChatEndpoint = /\/v1\/chat\/completions|\bchat\s*completions\b/i.test(detailHtml);
+    const hasChatEndpoint = /\\/v1\\/chat\\/completions|\\bchat\\s*completions\\b/i.test(detailHtml);
     const explicitlyFree = zeroPrice(detailText, 'Input') && zeroPrice(detailText, 'Output');
     if (!explicitlyFree || !hasChatEndpoint) return null;
 
@@ -132,7 +138,6 @@ async function getFreeChatModels(apiKey) {
       ...metrics,
     };
   });
-
   return verified.filter(Boolean).sort((a, b) => {
     const rank = { healthy: 0, degraded: 1, unstable: 2, unavailable: 3, no_data: 4 };
     return (rank[a.status] ?? 5) - (rank[b.status] ?? 5)
