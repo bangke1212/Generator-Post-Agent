@@ -41,17 +41,27 @@ npm run dev
 npm run build
 ```
 
-## ⚙️ Setup API Keys
+## 🔐 Setup API & Dashboard Access
 
-1. Open the app → **API Keys** tab
-2. Choose a provider (OpenRouter recommended — free models available)
-3. Paste your API key
-4. Click **Simpan & Aktifkan** then **Test Koneksi**
+API key tidak disimpan di browser. Atur seluruh secret melalui Netlify **Site configuration → Environment variables**:
 
-### Recommended Free Models (via OpenRouter):
-- `google/gemini-2.0-flash-001` — Best free model
-- `meta-llama/llama-3.3-70b-instruct` — Great for Indonesian
-- `deepseek/deepseek-r1-distill-llama-70b` — Deep reasoning
+- `APP_ACCESS_PASSWORD`: password untuk membuka dashboard.
+- `APP_SESSION_SECRET`: secret acak minimal 32 karakter untuk cookie sesi.
+- `XINGCHI_API_KEY`: API key Xingchi (gunakan key baru).
+- `XINGCHI_BASE_URL`: `https://api.xingchiapi.com/v1`.
+- `XINGCHI_MODEL`: `gpt-6.1-sol` (pastikan model ini tersedia di akun Xingchi).
+- `X_USER_ACCESS_TOKEN` (opsional): OAuth 2.0 User Context token X dengan scope `tweet.write` untuk publish langsung.
+
+Setelah menyimpan variabel, lakukan redeploy. Login di menu **Koneksi & Pengaturan**; sesi berlaku 7 hari. Jangan menaruh secret di `VITE_*`, source frontend, atau Git.
+
+## 🚀 Deploy ke Netlify
+
+Import repository dari GitHub. Konfigurasi sudah ada di `netlify.toml`:
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Functions directory: `netlify/functions`
+
+Jalankan lokal dengan `npm install`, `npm run dev`, atau `npx netlify dev` untuk mengetes Functions.
 
 ## 📁 Project Structure
 
@@ -94,3 +104,17 @@ MIT
 ---
 
 Built with ❤️ for the X algorithm era.
+
+
+## Deploy ke Vercel
+
+Project ini menggunakan Vercel Serverless Functions pada folder `api/`. Import repository ke Vercel, pilih framework Vite, build command `npm run build`, output directory `dist`, dan Node.js 22. Tambahkan environment variables berikut di Vercel Project Settings → Environment Variables, lalu redeploy:
+
+- `APP_ACCESS_PASSWORD`: password dashboard.
+- `APP_SESSION_SECRET`: secret acak minimal 32 karakter.
+- `XINGCHI_API_KEY`: API key Xingchi (simpan hanya di server).
+- `XINGCHI_BASE_URL`: `https://api.xingchiapi.com/v1`.
+- `XINGCHI_MODEL`: `gpt-6.1-sol` (sesuaikan dengan model yang aktif di akun Xingchi).
+- `X_USER_ACCESS_TOKEN`: opsional, OAuth 2.0 User Context token X dengan scope `tweet.write`.
+
+API routes: `/api/login`, `/api/logout`, `/api/config`, `/api/ai`, dan `/api/publish`.

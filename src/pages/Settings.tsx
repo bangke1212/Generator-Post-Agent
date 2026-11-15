@@ -1,220 +1,35 @@
-import { useEffect, useState } from 'react';
-import { getAllApiKeys, saveApiKey, deleteApiKey, ApiKey, getActiveApiKey } from '../store';
-import { PROVIDER_PRESETS, getModelProfile, testConnection } from '../providers';
-
-export default function Settings() {
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [provider, setProvider] = useState('openrouter');
-  const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null);
-  const [toast, setToast] = useState<{ type: string; text: string } | null>(null);
-
-  const refresh = () => setKeys(getAllApiKeys());
-  useEffect(() => { refresh(); }, []);
-
-  // Set default provider & model on mount
-  useEffect(() => {
-    const active = getActiveApiKey();
-    if (active) {
-      setProvider(active.provider);
-      setModel(active.model);
-    } else {
-      const preset = (PROVIDER_PRESETS as any)[provider];
-      if (preset) setModel(preset.models[0]?.id || '');
-    }
-  }, []);
-
-  // When provider changes:
-  // - If key already saved for this provider → auto-fill apiKey & use saved model
-  // - If not saved → clear apiKey, default to first model
-  useEffect(() => {
-    const existingKey = keys.find(k => k.provider === provider);
-    if (existingKey) {
-      setApiKey(existingKey.api_key);
-      setModel(existingKey.model);
-    } else {
-      setApiKey('');
-      const preset = (PROVIDER_PRESETS as any)[provider];
-      if (preset) setModel(preset.models[0]?.id || '');
-    }
-  }, [provider, keys]);
-
-  const showToast = (type: string, text: string) => {
-    setToast({ type, text });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const handleSave = async () => {
-    if (!apiKey.trim()) { showToast('error', 'API Key tidak boleh kosong'); return; }
-    setSaving(true);
-    saveApiKey({ provider, api_key: apiKey.trim(), model, is_active: true });
-    showToast('success', `${(PROVIDER_PRESETS as any)[provider]?.name || provider} — ${model.split('/').pop()} tersimpan & aktif!`);
-    refresh();
-    setSaving(false);
-  };
-
-  // Update model only — keep existing API key, just change active model
-  const handleModelChange = (newModel: string) => {
-    setModel(newModel);
-    const existingKey = keys.find(k => k.provider === provider);
-    if (existingKey) {
-      // Auto-save model change if key already exists (no need to re-enter key)
-      saveApiKey({ ...existingKey, model: newModel, is_active: true });
-      refresh();
-      showToast('success', `Model diganti ke ${newModel.split('/').pop()} — tetap aktif!`);
-    }
-  };
-
-  const handleTest = async () => {
-    const keyToTest = apiKey.trim() || keys.find(k => k.provider === provider)?.api_key || '';
-    if (!keyToTest) { showToast('error', 'Masukkan API Key dulu'); return; }
-    setTesting(true);
-    setTestResult(null);
-    try {
-      const res = await testConnection({ provider, apiKey: keyToTest, model });
-      setTestResult(res);
-    } catch (e: any) {
-      setTestResult({ success: false, error: e.message });
-    } finally { setTesting(false); }
-  };
-
-  const handleDelete = (p: string) => {
-    if (!confirm(`Hapus key ${(PROVIDER_PRESETS as any)[p]?.name || p}?`)) return;
-    deleteApiKey(p);
-    // If the deleted key was for the currently selected provider, clear the apiKey field
-    if (p === provider) {
-      setApiKey('');
-      const preset = (PROVIDER_PRESETS as any)[provider];
-      if (preset) setModel(preset.models[0]?.id || '');
-    }
-    refresh();
-    showToast('info', 'API Key dihapus');
-  };
-
-  const handleActivate = (p: string) => {
-    const k = keys.find(k => k.provider === p);
-    if (k) { saveApiKey({ ...k, is_active: true }); refresh(); showToast('success', 'Diaktifkan!'); }
-  };
-
-  // Current model info for tooltip
-  const modelProfile = getModelProfile(provider, model);
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {toast && <div className={`toast toast-${toast.type}`}>{toast.text}</div>}
-
-      <div>
-        <h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🔑</span> API Keys & Provider</h2>
-        <p className="text-sm text-[#666680] mt-1">Multi-provider AI — optimized X Algorithm 2026</p>
-      </div>
-
-      {keys.length > 0 && (
-        <div className="card-glow space-y-3 animate-fade-in-up">
-          <h3 className="text-sm font-semibold">Keys Tersimpan <span className="badge badge-default text-[10px] ml-2">{keys.length}</span></h3>
-          <div className="grid gap-2">
-            {keys.map(k => {
-              const p = (PROVIDER_PRESETS as any)[k.provider];
-              return (
-                <div key={k.provider} className={`flex items-center justify-between p-4 rounded-2xl border ${k.is_active ? 'border-[#06b6d4]/30 bg-[#06b6d4]/5' : 'border-[#1e1e4a] bg-[#0d0d25]'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-[#ffffff05]">{p?.icon || '🔧'}</div>
-                    <div>
-                      <p className="text-sm font-semibold flex items-center gap-2">
-                        {p?.name || k.provider}
-                        {k.is_active && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#06b6d4] opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-[#06b6d4]"></span></span>}
-                      </p>
-                      <p className="text-xs text-[#666680] mt-0.5">{k.model?.split('/').pop() || '—'} · {k.api_key.slice(0,4)}****{k.api_key.slice(-4)}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {!k.is_active && <button onClick={() => handleActivate(k.provider)} className="btn-ghost text-xs text-[#06b6d4]">Aktifkan</button>}
-                    <button onClick={() => handleDelete(k.provider)} className="btn-ghost text-xs text-[#ef4444]">🗑️</button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="card-glow space-y-5">
-        <h3 className="text-sm font-semibold">Tambah / Edit API Key</h3>
-
-        <div>
-          <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">Provider</label>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {Object.entries(PROVIDER_PRESETS).filter(([slug]) => slug !== 'custom').map(([slug, info]: any) => {
-              const hasKey = keys.some(k => k.provider === slug);
-              return (
-                <button key={slug} onClick={() => setProvider(slug)} className={`p-3 rounded-2xl border text-center relative ${provider === slug ? 'border-[#6366f1] bg-[#6366f1]/10' : 'border-[#1e1e4a] hover:border-[#2e2e5e]'}`}>
-                  {hasKey && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#10b981]"></span>}
-                  <span className="text-xl block mb-1.5">{info.icon}</span><span className="text-[11px] font-medium text-[#9494b8]">{info.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">Model</label>
-          <select value={model} onChange={e => handleModelChange(e.target.value)} className="input">
-            {((PROVIDER_PRESETS as any)[provider]?.models || []).map((m: any) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Model Info Card */}
-        {modelProfile && (
-          <div className="p-4 rounded-2xl border border-[#1e1e4a] bg-[#0d0d25] space-y-2 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="badge badge-accent text-[10px]">Best for</span>
-              <span className="text-[#d4d4e8]">{modelProfile.bestFor}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="badge badge-info text-[10px] shrink-0 mt-0.5">Strengths</span>
-              <span className="text-[#9494b8]">{modelProfile.strengths?.join(' · ')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="badge badge-default text-[10px]">Temp</span>
-              <span className="text-[#9494b8]">{modelProfile.temperature}</span>
-              <span className="badge badge-default text-[10px] ml-3">Tokens</span>
-              <span className="text-[#9494b8]">{modelProfile.maxTokens}</span>
-            </div>
-            {(PROVIDER_PRESETS as any)[provider]?.rateLimitNote && (
-              <p className="text-[#666680] italic">{(PROVIDER_PRESETS as any)[provider].rateLimitNote}</p>
-            )}
-          </div>
-        )}
-
-        <div>
-          <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">API Key</label>
-          <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)}
-            placeholder={`${(PROVIDER_PRESETS as any)[provider]?.name || ''} API Key...`} className="input font-mono text-sm" />
-          {(PROVIDER_PRESETS as any)[provider]?.docs && (
-            <a href={(PROVIDER_PRESETS as any)[provider].docs} target="_blank" rel="noopener"
-              className="text-xs text-[#6366f1] hover:text-[#818cf8] mt-2 inline-flex items-center gap-1">📖 Dapatkan API Key →</a>
-          )}
-        </div>
-
-        <div className="flex gap-3">
-          <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 text-sm">{saving ? 'Menyimpan...' : '💾 Simpan & Aktifkan'}</button>
-          <button onClick={handleTest} disabled={testing} className="btn-outline text-sm">{testing ? 'Testing...' : '🧪 Test Koneksi'}</button>
-        </div>
-
-        {testResult && (
-          <div className={`p-4 rounded-2xl border animate-scale-in ${testResult.success ? 'bg-[#10b981]/5 border-[#10b981]/20' : 'bg-[#ef4444]/5 border-[#ef4444]/20'}`}>
-            <div className="flex items-center gap-3">
-              <span className="text-xl">{testResult.success ? '✅' : '❌'}</span>
-              <div><p className={`text-sm font-semibold ${testResult.success ? 'text-[#34d399]' : 'text-[#f87171]'}`}>{testResult.success ? 'Koneksi berhasil!' : 'Koneksi gagal'}</p>
-              {testResult.error && <p className="text-xs text-[#f87171]/70 mt-1">{testResult.error}</p>}</div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+import {useEffect,useState} from 'react';
+import {testConnection, PROVIDER_PRESETS, getSelectedModel, setSelectedModel} from '../providers';
+type Config={appAuthConfigured:boolean;sessionValid:boolean;aiConfigured:boolean;xConfigured:boolean;model:string;baseUrl:string};
+export default function Settings(){
+ const [selectedModel,setSelected]=useState(getSelectedModel()),[config,setConfig]=useState<Config|null>(null),[loading,setLoading]=useState(true),[password,setPassword]=useState(''),[loginBusy,setLoginBusy]=useState(false),[testing,setTesting]=useState(false),[test,setTest]=useState<{success:boolean;error?:string}|null>(null),[message,setMessage]=useState('');
+ const refresh=async()=>{setLoading(true);try{const r=await fetch('/api/config');setConfig(await r.json());}catch{setMessage('Tidak dapat menghubungi server Vercel.')}finally{setLoading(false);}};
+ useEffect(()=>{void refresh();},[]);
+ const login=async()=>{setLoginBusy(true);setMessage('');try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Login gagal');setPassword('');await refresh();setMessage('Login berhasil. Dashboard siap digunakan.');}catch(e){setMessage(e instanceof Error?e.message:'Login gagal');}finally{setLoginBusy(false);}};
+ const logout=async()=>{await fetch('/api/logout',{method:'POST'});setTest(null);await refresh();setMessage('Anda sudah logout.');};
+ const chooseModel=(id:string)=>{setSelectedModel(id);setSelected(id);setTest(null);};
+ const runTest=async()=>{setTesting(true);setTest(null);setTest(await testConnection(selectedModel));setTesting(false);};
+ return <div className="space-y-6 animate-fade-in">
+ <div><h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🔐</span> Koneksi & Pengaturan</h2><p className="text-sm text-[#91a0b5] mt-1">Kelola akses dashboard dan koneksi Xingchi. Secret hanya disimpan di server Vercel.</p></div>
+ <section className="card-glow space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Akses dashboard</h3><span className={config?.sessionValid?'badge badge-success':'badge badge-warning'}>{config?.sessionValid?'Login aktif':'Belum login'}</span></div>
+ {loading?<p className="text-sm text-[#91a0b5]">Memeriksa sesi…</p>:!config?.appAuthConfigured?<p className="text-sm text-[#f2b96b]">Atur APP_ACCESS_PASSWORD dan APP_SESSION_SECRET di Vercel Environment Variables, lalu redeploy.</p>:config.sessionValid?<div className="flex items-center justify-between gap-3"><p className="text-sm text-[#45d9c0]">Sesi aktif selama 7 hari pada browser ini.</p><button onClick={logout} className="btn-outline">Logout</button></div>:<div className="flex flex-col sm:flex-row gap-3"><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} placeholder="Password dashboard" className="input" autoComplete="current-password"/><button onClick={login} disabled={loginBusy||!password} className="btn-primary">{loginBusy?'Memeriksa…':'Masuk dashboard'}</button></div>}
+ {message&&<p className="text-sm text-[#aab6c7]">{message}</p>}</section>
+ <section className="card-glow space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Model OpenAI</h3><span className="badge badge-info">via Xingchi API</span></div>
+ <p className="text-sm text-[#91a0b5]">Pilih model untuk membuat post. Pilihan disimpan di browser ini.</p>
+ <div className="grid sm:grid-cols-2 gap-3">{PROVIDER_PRESETS.xingchi.models.map(m=><button key={m.id} type="button" onClick={()=>chooseModel(m.id)} className={`text-left rounded-xl border p-4 transition-all ${selectedModel===m.id?'border-[#8b9cff] bg-[#8b9cff]/10 shadow-lg shadow-[#8b9cff]/10':'border-[#263448] bg-[#0b121e] hover:border-[#52627a]'}`}>
+ <div className="flex items-start justify-between gap-2"><span className="font-semibold">{m.name}</span>{selectedModel===m.id&&<span className="text-[#8b9cff]">✓</span>}</div>
+ <p className="text-xs text-[#91a0b5] mt-2">{m.bestFor}</p><span className="inline-block mt-3 text-[11px] rounded-full bg-[#263448] px-2 py-1 text-[#c4d0e0]">{m.recommendation}</span></button>)}</div>
+ <p className="text-xs text-[#f2b96b]">Daftar model mengikuti katalog gateway. Model mungkin ditolak jika belum diaktifkan untuk API key Xingchi Anda.</p></section>
+ <section className="card-glow space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Xingchi AI Gateway</h3><span className="badge badge-info">Server-side</span></div>
+ {loading?<p className="text-sm text-[#91a0b5]">Memeriksa konfigurasi…</p>:<div className="grid sm:grid-cols-2 gap-3">
+ <div className="rounded-xl border border-[#263448] bg-[#0b121e] p-4"><p className="text-xs text-[#91a0b5]">API KEY</p><p className="mt-2 font-semibold">{config?.aiConfigured?'● Tersimpan di server':'○ Belum diatur'}</p></div>
+ <div className="rounded-xl border border-[#263448] bg-[#0b121e] p-4"><p className="text-xs text-[#91a0b5]">MODEL AKTIF</p><p className="mt-2 font-semibold">{config?.model||'gpt-6.1-sol'}</p></div>
+ <div className="rounded-xl border border-[#263448] bg-[#0b121e] p-4"><p className="text-xs text-[#91a0b5]">X PUBLISH TOKEN</p><p className="mt-2 font-semibold">{config?.xConfigured?'● Terpasang':'○ Belum diatur'}</p></div>
+ <div className="rounded-xl border border-[#263448] bg-[#0b121e] p-4"><p className="text-xs text-[#91a0b5]">API BASE URL</p><p className="mt-2 text-xs break-all">{config?.baseUrl}</p></div></div>}
+ <div className="flex flex-wrap gap-3"><button onClick={runTest} disabled={testing||!config?.sessionValid||!config?.aiConfigured} className="btn-primary">{testing?'Menguji…':'⚡ Test koneksi AI'}</button><button onClick={refresh} className="btn-outline">↻ Periksa ulang</button></div>
+ {test&&<p className={test.success?'text-sm text-[#45d9c0]':'text-sm text-[#f87171]'}>{test.success?'✓ Xingchi API berhasil merespons.':test.error}</p>}</section>
+ <section className="card space-y-3"><h3 className="font-semibold">Environment Variables Vercel</h3><ol className="list-decimal pl-5 space-y-2 text-sm text-[#aab6c7]">
+ <li><code>APP_ACCESS_PASSWORD</code> — password pribadi untuk masuk dashboard.</li><li><code>APP_SESSION_SECRET</code> — string acak panjang (minimal 32 karakter) untuk menandatangani sesi.</li><li><code>XINGCHI_API_KEY</code> — API key Xingchi yang baru.</li><li><code>XINGCHI_BASE_URL</code> — <code>https://api.xingchiapi.com/v1</code>.</li><li><code>XINGCHI_MODEL</code> — <code>gpt-6.1-sol</code>; pastikan alias ini tersedia pada akun Xingchi.</li><li><code>X_USER_ACCESS_TOKEN</code> (opsional) — OAuth 2.0 User Context token X dengan scope <code>tweet.write</code> untuk publikasi langsung.</li></ol>
+ <p className="text-xs text-[#f2b96b]">Setelah mengubah variabel, redeploy. Jangan pernah memasukkan API key di browser, file frontend, atau commit GitHub. Key yang pernah dibagikan di chat sebaiknya dicabut dan diganti.</p></section>
+ </div>;
 }

@@ -2,8 +2,7 @@
 // X Algorithm 2026 — ALL-TIMELINE COVERAGE
 // For You Feed + Following Feed + Explore/Trending
 
-import { callAI, getModelParams, getModelProfile } from './providers';
-import { getActiveApiKey } from './store';
+import { callAI, getModelParams, getModelProfile, getSelectedModel } from './providers';
 
 export interface GeneratedIdea {
   id: number;
@@ -163,10 +162,10 @@ function getPerModelConstraints(provider: string, model: string): string {
   if (!profile) return '';
   const constraints: string[] = [];
   if (profile.maxTokens <= 500) {
-    constraints.push('⚠️ Kamu model compact: tweet 120-150 kata saja. Langsung to the point dan padat.');
+    constraints.push('⚠️ Buat satu post X yang ringkas: maksimal 220 karakter, langsung to the point.');
   }
   if (profile.maxTokens >= 800) {
-    constraints.push('✅ Kamu model besar: boleh elaborate. Target 120-150 kata.');
+    constraints.push('✅ Tetap buat satu post X ringkas: maksimal 220 karakter, bukan thread.');
   }
   return constraints.length ? `\n🔧 MODEL CONSTRAINTS:\n${constraints.join('\n')}\n` : '';
 }
@@ -178,16 +177,16 @@ function getLanguageInstructions(language: string) {
 
 export async function generateContent(opts: { topic?: string; language?: string; tone?: string }) {
   const { topic = 'general', language = 'id' } = opts;
-  const key = getActiveApiKey();
-  if (!key) return { content: '⚠️ Belum ada API key aktif. Buka Settings → pilih provider → input key → Simpan & Aktifkan.', emoji_count: 0, topic, provider: 'none' };
+  const provider = 'xingchi';
+  const model = getSelectedModel();
 
   const normalizedLanguage = language === 'en' ? 'en' : 'id';
   const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
   const langGuidelines = getLanguageInstructions(normalizedLanguage);
 
-  const modelHint = getModelStrengthHint(key.provider, key.model);
-  const modelConstraints = getPerModelConstraints(key.provider, key.model);
-  const optimal = getModelParams(key.provider, key.model);
+  const modelHint = getModelStrengthHint(provider, model);
+  const modelConstraints = getPerModelConstraints(provider, model);
+  const optimal = getModelParams(provider, model);
 
   const prompt = `KAMU ADALAH GHOSTWRITER TWITTER PROFESIONAL. BUATKAN 1 TWEET VIRAL.
 
@@ -207,7 +206,7 @@ ${ALGO_ANTI_PENALTY}
 - EMOJI sebagai karakter pertama (wajib)
 - 2-3 paragraf pendek
 - Tiap paragraf diawali emoji yang nyambung
-- TARGET PANJANG: 120-150 kata total
+- TARGET PANJANG: 180-220 karakter (maksimal 220 karakter, termasuk spasi dan emoji)
 - Akhiri dengan REPLY BAIT natural
 - Personal voice: "gue/aku" (atau "I" untuk English)
 
@@ -217,15 +216,14 @@ ${ALGO_ANTI_PENALTY}
 - HARUS ada opini personal yang tajam
 - HARUS menggunakan emoji yang match emosi
 - Tone harus konsisten di seluruh tweet
-- JANGAN lebih pendek dari 120 kata atau lebih panjang dari 150 kata
+- JANGAN melebihi 220 karakter; satu post saja, bukan thread
 
 TULIS TWEET-NYA SAJA, TANPA LABEL, TANPA HEADER:`;
 
   try {
     const result = await callAI({
-      provider: key.provider,
-      apiKey: key.api_key,
-      model: key.model,
+      provider: provider,
+      model: model,
       prompt,
       maxTokens: optimal.maxTokens,
       temperature: optimal.temperature,
@@ -256,16 +254,16 @@ REPLY BAIT: "Relate angkat tangan 💀", "Yang ngerasa kena, sini ngaku 👇"`,
 
 export async function generateIdeas(opts: { idea: string; language?: string; tone?: string; count?: number }) {
   const { idea, language = 'id', tone = 'supportif', count = 5 } = opts;
-  const key = getActiveApiKey();
-  if (!key) return { ideas: [] as GeneratedIdea[], provider: 'none' };
+  const provider = 'xingchi';
+  const model = getSelectedModel();
 
   const normalizedLanguage = language === 'en' ? 'en' : 'id';
   const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
   const langGuidelines = getLanguageInstructions(normalizedLanguage);
   const maxCount = Math.min(count, 10);
-  const optimal = getModelParams(key.provider, key.model);
-  const modelHint = getModelStrengthHint(key.provider, key.model);
-  const modelConstraints = getPerModelConstraints(key.provider, key.model);
+  const optimal = getModelParams(provider, model);
+  const modelHint = getModelStrengthHint(provider, model);
+  const modelConstraints = getPerModelConstraints(provider, model);
 
   const prompt = `KAMU ADALAH GHOSTWRITER TWITTER PROFESIONAL. BUATKAN ${maxCount} VARIASI TWEET.
 
@@ -290,22 +288,21 @@ ${ALGO_ANTI_PENALTY}
 (dan seterusnya)
 
 ⚠️ SETIAP TWEET HARUS:
-- 120-150 kata (padat, berbobot)
+- 180-220 karakter per tweet (maksimal 220 karakter agar aman untuk X)
 - Hook berbeda (random dari 8 hook types)
 - Emoji emosi yang match (ikut EMOJI QUALITY GUIDE)
 - Personal voice: "gue/aku" atau "I" untuk English
 - Akhiri reply bait natural
 - TIDAK BOLEH ada kalimat generik, klise, atau template
 - TIDAK BOLEH pakai frasa formal/akademik
-- JANGAN kurang dari 120 kata atau lebih dari 150 kata
+- JANGAN melebihi 220 karakter per tweet
 
 TULIS ${maxCount} TWEET:`;
 
   try {
     const result = await callAI({
-      provider: key.provider,
-      apiKey: key.api_key,
-      model: key.model,
+      provider: provider,
+      model: model,
       prompt,
       maxTokens: optimal.maxTokens * 2,
       temperature: optimal.temperature,
@@ -330,7 +327,7 @@ TULIS ${maxCount} TWEET:`;
       hook_type: hookTypes[i % hookTypes.length],
     }));
 
-    return { ideas, provider: key.provider };
+    return { ideas, provider: 'xingchi' };
   } catch (e: any) {
     return { ideas: [] as GeneratedIdea[], provider: 'error' };
   }
