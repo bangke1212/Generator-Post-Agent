@@ -53,6 +53,7 @@ export default function Settings() {
 
   const handleSave = async () => {
     if (!apiKey.trim()) { showToast('error', 'API Key tidak boleh kosong'); return; }
+    if (!model) { showToast('error', 'Pilih model yang tersedia terlebih dahulu'); return; }
     setSaving(true);
     saveApiKey({ provider, api_key: apiKey.trim(), model, is_active: true });
     showToast('success', `${(PROVIDER_PRESETS as any)[provider]?.name || provider} — ${model.split('/').pop()} tersimpan & aktif!`);
@@ -99,6 +100,7 @@ export default function Settings() {
   const handleTest = async () => {
     const keyToTest = apiKey.trim() || keys.find(k => k.provider === provider)?.api_key || '';
     if (!keyToTest) { showToast('error', 'Masukkan API Key dulu'); return; }
+    if (!model) { showToast('error', 'Pilih model yang tersedia terlebih dahulu'); return; }
     setTesting(true);
     setTestResult(null);
     try {
@@ -236,7 +238,7 @@ export default function Settings() {
 
         <div>
           <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">API Key</label>
-          <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)}
+          <input type="password" value={apiKey} onChange={e => { setApiKey(e.target.value); if (provider === 'crowllm') setCrowllmSynced(false); }}
             placeholder={`${(PROVIDER_PRESETS as any)[provider]?.name || ''} API Key...`} className="input font-mono text-sm" />
           {(PROVIDER_PRESETS as any)[provider]?.docs && (
             <a href={(PROVIDER_PRESETS as any)[provider].docs} target="_blank" rel="noopener"
