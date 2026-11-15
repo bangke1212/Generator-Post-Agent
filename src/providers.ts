@@ -35,6 +35,7 @@ export const CROWLLM_FREE_MODELS: ModelConfig[] = [
   { id: 'caw/glm-5.3-flash:free', name: 'GLM 5.3 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
   { id: 'crouton-alpha:free', name: 'Crouton Alpha', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
   { id: 'crow-code-limitless:free', name: 'Crow Code Limitless', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'coding'], bestFor: 'Coding dan chat.' },
+  { id: 'crow-uncensored:free', name: 'Crow Uncensored Free', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat alternatif; tinjau hasil sebelum digunakan.' },
   { id: 'crow/auto:free', name: 'Crow Auto Free', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Router otomatis ke model free yang tersedia.' },
   { id: 'minimax-m3.1-flash:free', name: 'MiniMax M3.1 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
   { id: 'muse-spark-1.1:free', name: 'Muse Spark 1.1', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
@@ -302,7 +303,7 @@ export async function testConnection(params: { provider: string; apiKey: string;
   try {
     const result = await callAI({
       ...params,
-      prompt: 'Test koneksi — reply dengan OK saja',
+      prompt: params.provider === 'crowllm' ? 'Reply with the single word: ready.' : 'Test koneksi — reply dengan OK saja',
     });
     return { success: !!result.content, error: result.content ? undefined : 'No response' };
   } catch (e: any) {

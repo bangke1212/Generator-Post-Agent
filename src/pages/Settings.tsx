@@ -230,7 +230,7 @@ export default function Settings() {
             <p className="text-xs text-[#666680] mt-2">
               {crowllmSynced
                 ? 'Daftar model tersedia berasal dari /v1/models dan hanya lolos jika harga input/output $0 serta endpoint chat tersedia.'
-                : 'Sepuluh model rekomendasi ditampilkan sebagai kandidat awal; belum diverifikasi untuk API key Anda. Masukkan key lalu sinkronkan sebelum menyimpan atau menggunakannya.'}{' '}
+                : `${CROWLLM_FREE_MODELS.length} model rekomendasi ditampilkan sebagai kandidat awal; belum diverifikasi untuk API key Anda. Masukkan key lalu sinkronkan sebelum menyimpan atau menggunakannya.`}{' '}
               Tier Free memiliki batas umum beberapa panggilan per menit; CrowLLM tidak mencantumkan RPM khusus per model.{' '}
               <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live CrowLLM</a>.
               {modelSyncMessage && <span className="block mt-1 text-[#9494b8]">{modelSyncMessage}</span>}

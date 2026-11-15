@@ -57,9 +57,11 @@ npm run build
 
 CrowLLM uses the OpenAI-compatible base URL `https://crowllm.com/v1`. Add your CrowLLM key in **API Providers → CrowLLM**, then click **Sinkronkan model free**.
 
-Before synchronization, Settings shows the 10 curated IDs below as unverified candidates. After synchronization, only IDs visible to the supplied API key and verified by the Vercel proxy are selectable for saving/testing. The proxy reads account-visible IDs from `GET /v1/models`; the `:free` suffix is only a discovery hint, not proof of zero cost. Each candidate must have zero input/output price and a chat-completions endpoint. Embedding, reranking, speech, and other non-chat models are excluded.
+Before synchronization, Settings shows the 11 curated IDs below as unverified candidates. After synchronization, only IDs visible to the supplied API key and verified by the Vercel proxy are selectable for saving/testing. The proxy reads account-visible IDs from `GET /v1/models`; the `:free` suffix is only a discovery hint, not proof of zero cost. Each candidate must have zero input/output price and a chat-completions endpoint. Embedding, reranking, speech, and other non-chat models are excluded.
 
-These 10 curated models are highlighted with ★ when they are available to the supplied key and pass the same live price/endpoint checks: `agnes-2.5-flash:free`, `beam-1.0:free`, `caw/glm-5.3-flash:free`, `crouton-alpha:free`, `crow-code-limitless:free`, `crow/auto:free`, `minimax-m3.1-flash:free`, `muse-spark-1.1:free`, `nvidia/nemotron-3.5-bolt-e4b:free`, and `deepseek-v4.1-flash-uncensored:free`. `crow/auto:free` is an automatic router, not one fixed underlying model. Availability can vary by API key and can change over time.
+These 11 curated models are highlighted with ★ when they are available to the supplied key and pass the same live price/endpoint checks: `agnes-2.5-flash:free`, `beam-1.0:free`, `caw/glm-5.3-flash:free`, `crouton-alpha:free`, `crow-code-limitless:free`, `crow-uncensored:free`, `crow/auto:free`, `minimax-m3.1-flash:free`, `muse-spark-1.1:free`, `nvidia/nemotron-3.5-bolt-e4b:free`, and `deepseek-v4.1-flash-uncensored:free`. `crow/auto:free` is an automatic router, not one fixed underlying model. Availability can vary by API key and can change over time.
+
+The CrowLLM connection test sends the prompt `Reply with the single word: ready.` through the Vercel proxy to CrowLLM's `POST /v1/chat/completions` endpoint.
 
 CrowLLM describes the Free tier limit as a handful of calls per minute; it does not publish an exact per-model RPM in the public catalog. Check the current [pricing page](https://crowllm.com/pricing) and each model page before relying on free-tier throughput.
 
