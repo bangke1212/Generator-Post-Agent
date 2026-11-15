@@ -18,6 +18,23 @@ function zeroPrice(text, label) {
   return !!match && Number(match[1]) === 0;
 }
 
+function zeroMetadataPrice(value) {
+  if (typeof value === 'number') return value === 0;
+  if (typeof value === 'string') return value.trim() !== '' && Number(value) === 0;
+  return false;
+}
+
+function hasZeroPricingMetadata(item) {
+  const pricing = item?.pricing || item;
+  const pairs = [
+    [pricing?.input, pricing?.output],
+    [pricing?.prompt, pricing?.completion],
+    [pricing?.input_price, pricing?.output_price],
+    [pricing?.inputPrice, pricing?.outputPrice],
+  ];
+  return pairs.some(([input, output]) => zeroMetadataPrice(input) && zeroMetadataPrice(output));
+}
+
 function parseMetrics(html, modelId) {
   const text = htmlText(html);
   const index = text.toLowerCase().indexOf(modelId.toLowerCase());
@@ -87,7 +104,7 @@ async function getFreeChatModels(apiKey) {
 
   // :free is only a discovery hint. Each candidate's official model page is checked
   // for zero input/output price AND a chat-completions endpoint before it is shown.
-  const candidates = ids.filter(id => id.endsWith(':free'));
+  const candidates = rows.filter(item => typeof item?.id === 'string' && (item.id.endsWith(':free') || hasZeroPricingMetadata(item))).map(item => item.id);
   if (!candidates.length) return [];
 
   let statusHtml = '';
