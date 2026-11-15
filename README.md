@@ -60,6 +60,8 @@ CrowLLM uses the OpenAI-compatible base URL `https://crowllm.com/v1`. Add your C
 The app includes a curated free chat-model list:
 - `deepseek-v4-flash-uncensored:free`
 - `caw/glm-5.3-flash:free`
+- `glm-4.7-flash:free`
+- `glm-4.6v-flash:free`
 - `agnes-2.5-flash:free`
 - `laguna-s-2-1:free`
 
