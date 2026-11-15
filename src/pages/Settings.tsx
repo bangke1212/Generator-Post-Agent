@@ -218,6 +218,7 @@ export default function Settings() {
             )}
           </div>
           {provider === 'crowllm' && (
+            <div>
             <p className="text-xs text-[#666680] mt-2">
               Daftar model diambil langsung dari <code>/v1/models</code>. Setiap kandidat diperiksa ke halaman model CrowLLM: harga input/output harus $0 dan endpoint chat completions harus tersedia.{' '}
               <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live CrowLLM</a>.
