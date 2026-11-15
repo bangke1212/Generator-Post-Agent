@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAllApiKeys, saveApiKey, deleteApiKey, ApiKey, getActiveApiKey } from '../store';
-import { PROVIDER_PRESETS, getModelProfile, testConnection } from '../providers';
+import { PROVIDER_PRESETS, getModelProfile, testConnection, fetchCrowllmFreeModels, ModelConfig } from '../providers';
 
 export default function Settings() {
   const [keys, setKeys] = useState<ApiKey[]>([]);
@@ -11,6 +11,10 @@ export default function Settings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null);
   const [toast, setToast] = useState<{ type: string; text: string } | null>(null);
+  const [crowllmModels, setCrowllmModels] = useState<ModelConfig[]>([]);
+  const [crowllmSynced, setCrowllmSynced] = useState(false);
+  const [syncingModels, setSyncingModels] = useState(false);
+  const [modelSyncMessage, setModelSyncMessage] = useState('');
 
   const refresh = () => setKeys(getAllApiKeys());
   useEffect(() => { refresh(); }, []);
@@ -68,6 +72,30 @@ export default function Settings() {
     }
   };
 
+  const handleSyncCrowllmModels = async () => {
+    const keyToUse = apiKey.trim() || keys.find(k => k.provider === 'crowllm')?.api_key || '';
+    if (!keyToUse) { showToast('error', 'Masukkan API Key CrowLLM dulu'); return; }
+    setSyncingModels(true);
+    setModelSyncMessage('');
+    try {
+      const models = await fetchCrowllmFreeModels(keyToUse);
+      setCrowllmModels(models);
+      setCrowllmSynced(true);
+      if (models.length > 0) {
+        setModel(models[0].id);
+        setModelSyncMessage(`${models.length} model gratis tersedia untuk API key ini.`);
+        showToast('success', `${models.length} model gratis CrowLLM berhasil disinkronkan.`);
+      } else {
+        setModel('');
+        setModelSyncMessage('Tidak ada model gratis dari katalog CrowLLM yang tersedia untuk API key ini. Periksa paket, token scope, atau status provider.');
+      }
+    } catch (e: any) {
+      setModelSyncMessage(e.message || 'Gagal mengambil daftar model CrowLLM.');
+    } finally {
+      setSyncingModels(false);
+    }
+  };
+
   const handleTest = async () => {
     const keyToTest = apiKey.trim() || keys.find(k => k.provider === provider)?.api_key || '';
     if (!keyToTest) { showToast('error', 'Masukkan API Key dulu'); return; }
@@ -101,6 +129,8 @@ export default function Settings() {
 
   // Current model info for tooltip
   const modelProfile = getModelProfile(provider, model);
+  const presetModels = (PROVIDER_PRESETS as any)[provider]?.models || [];
+  const modelOptions: ModelConfig[] = provider === 'crowllm' && crowllmSynced ? crowllmModels : presetModels;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -145,7 +175,7 @@ export default function Settings() {
 
         <div>
           <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">Provider</label>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {Object.entries(PROVIDER_PRESETS).filter(([slug]) => slug !== 'custom').map(([slug, info]: any) => {
               const hasKey = keys.some(k => k.provider === slug);
               return (
@@ -160,11 +190,24 @@ export default function Settings() {
 
         <div>
           <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2.5 block">Model</label>
-          <select value={model} onChange={e => handleModelChange(e.target.value)} className="input">
-            {((PROVIDER_PRESETS as any)[provider]?.models || []).map((m: any) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <select value={model} onChange={e => handleModelChange(e.target.value)} className="input flex-1" disabled={modelOptions.length === 0}>
+              {modelOptions.map((m: ModelConfig) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            {provider === 'crowllm' && (
+              <button onClick={handleSyncCrowllmModels} disabled={syncingModels} className="btn-outline text-xs whitespace-nowrap">
+                {syncingModels ? 'Memuat...' : '↻ Sinkronkan model free'}
+              </button>
+            )}
+          </div>
+          {provider === 'crowllm' && (
+            <p className="text-xs text-[#666680] mt-2">
+              Model katalog awal hanya yang terverifikasi gratis. Sinkronkan untuk memastikan model tersebut tersedia pada API key akunmu.
+              {modelSyncMessage && <span className="block mt-1 text-[#9494b8]">{modelSyncMessage}</span>}
+            </p>
+          )}
         </div>
 
         {/* Model Info Card */}
