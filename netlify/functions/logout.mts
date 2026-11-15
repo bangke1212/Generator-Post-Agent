@@ -1,0 +1,1 @@
+export default async()=>new Response(JSON.stringify({success:true}),{headers:{'Content-Type':'application/json','Set-Cookie':'postpilot_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0'}});
