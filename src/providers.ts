@@ -76,6 +76,19 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       { id: 'gemma2-9b-it', name: '🆓 Gemma 2 9B', free: true, temperature: 0.83, maxTokens: 550, strengths: ['conversational'], bestFor: 'Relatable' },
     ],
   },
+  xingchi: {
+    name: 'Xingchi AI',
+    icon: '✦',
+    baseUrl: 'https://api.xingchiapi.com/v1',
+    docs: 'https://xingchiapi.com/dashboard',
+    rateLimitNote: 'Gunakan API key Xingchi Anda. Ketersediaan alias model bergantung pada akun/gateway.',
+    models: [
+      { id: 'gpt-6-astra', name: 'GPT-6 Astra', temperature: 0.9, maxTokens: 1600, strengths: ['creative', 'natural_id', 'reasoning', 'deep_reasoning', 'debate'], bestFor: 'Hook kuat, ide orisinal, opini tajam, dan konten kompleks.' },
+      { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', temperature: 0.85, maxTokens: 1400, strengths: ['creative', 'natural_id', 'reasoning'], bestFor: 'Generator post harian dengan keseimbangan kualitas dan biaya.' },
+      { id: 'gpt-6-sol', name: 'GPT-6 Sol', temperature: 0.85, maxTokens: 1400, strengths: ['creative', 'natural_id', 'reasoning'], bestFor: 'Alternatif serbaguna untuk ide dan post.' },
+      { id: 'gpt-6-luna', name: 'GPT-6 Luna', temperature: 0.8, maxTokens: 1000, strengths: ['natural_id', 'creative'], bestFor: 'Draft singkat dan penggunaan rutin.' },
+    ],
+  },
   custom: {
     name: 'Custom API',
     icon: '🔧',
