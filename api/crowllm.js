@@ -117,15 +117,23 @@ async function getFreeChatModels(apiKey) {
   // Fetch the public status page and model detail pages concurrently.
   // The suffix is only a discovery hint: page pricing and chat endpoint are still verified.
   const statusPromise = fetchText(CROWLLM + '/status', 10000).catch(() => '');
-  const detailPagesPromise = mapWithConcurrency(candidates, 12, async id => ({
-    id,
-    html: await fetchText(CROWLLM + '/models/' + encodeURIComponent(id), 10000),
-  }));
+  const detailPagesPromise = mapWithConcurrency(candidates, 12, async id => {
+    // Preserve vendor/model path separators; encode each model ID segment separately.
+    const pathId = id.split('/').map(encodeURIComponent).join('/');
+    try {
+      return { id, html: await fetchText(CROWLLM + '/models/' + pathId, 10000) };
+    } catch {
+      // Fallback for routes that expect the entire ID as one encoded segment.
+      return { id, html: await fetchText(CROWLLM + '/models/' + encodeURIComponent(id), 10000) };
+    }
+  });
   const [statusHtml, detailPages] = await Promise.all([statusPromise, detailPagesPromise]);
 
   const verified = detailPages.filter(Boolean).map(({ id, html: detailHtml }) => {
     const detailText = htmlText(detailHtml);
-    const hasChatEndpoint = /\/v1\/chat\/completions|\bchat\s*completions\b/i.test(detailHtml);
+    // CrowLLM model pages label the endpoint as 'Endpoints chat'; do not require the URL sample to be present.
+    const endpointLabel = detailText.match(/Endpoints\\s+([a-z0-9,\\s-]{1,120})/i)?.[1] || '';
+    const hasChatEndpoint = /\\/v1\\/chat\\/completions/i.test(detailHtml) || /(?:^|\\b)chat(?:\\b|$)/i.test(endpointLabel);
     const explicitlyFree = zeroPrice(detailText, 'Input') && zeroPrice(detailText, 'Output');
     if (!explicitlyFree || !hasChatEndpoint) return null;
 
