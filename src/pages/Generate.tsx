@@ -45,7 +45,7 @@ export default function Generate({ onTabChange }: Props) {
     setPublishing(true);
     const saved = insertPost({ content: result.content, topic: result.topic, emoji_count: result.emoji_count });
     try {
-      const response = await fetch('/.netlify/functions/publish', {
+      const response = await fetch('/api/publish', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: result.content })
       });
