@@ -34,14 +34,20 @@ export const CROWLLM_FREE_MODELS: ModelConfig[] = [
 ];
 
 export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfig[]> {
-  const response = await fetch('https://crowllm.com/v1/models', {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`CrowLLM gagal mengambil daftar model (HTTP ${response.status}): ${body.slice(0, 240)}`);
+  let response: Response;
+  try {
+    response = await fetch('/api/crowllm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'models', apiKey }),
+    });
+  } catch {
+    throw new Error('Tidak dapat menghubungi backend Vercel (/api/crowllm). Pastikan deployment terbaru sudah selesai.');
   }
-  const payload = await response.json();
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || `Backend CrowLLM gagal (HTTP ${response.status}).`);
+  }
   const available = new Set<string>(
     Array.isArray(payload?.data)
       ? payload.data.map((item: { id?: unknown }) => item?.id).filter((id: unknown): id is string => typeof id === 'string')
@@ -170,6 +176,43 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
   if (!endpoint) throw new Error('Base URL tidak diatur untuk ' + provider);
 
   const optimal = getModelParams(provider, model);
+
+  // CrowLLM is called through a same-origin Vercel function to avoid browser CORS failures.
+  if (provider === 'crowllm') {
+    let response: Response;
+    try {
+      response = await fetch('/api/crowllm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'chat',
+          apiKey,
+          model,
+          prompt,
+          maxTokens: maxTokens || optimal.maxTokens,
+          temperature: temperature ?? optimal.temperature,
+        }),
+      });
+    } catch {
+      throw new Error('Tidak dapat menghubungi backend Vercel (/api/crowllm). Pastikan deployment terbaru sudah selesai.');
+    }
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error('Backend CrowLLM mengembalikan respons tidak valid (HTTP ' + response.status + '). Periksa deployment fungsi Vercel.');
+    }
+    if (!response.ok) {
+      const detail = data?.error?.message || 'CrowLLM API gagal (HTTP ' + response.status + ')';
+      throw new Error(detail);
+    }
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      throw new Error('CrowLLM merespons tanpa teks. Periksa model dan format respons API.');
+    }
+    return { content, provider: preset.name, model };
+  }
 
   // Xingchi is called through a same-origin Vercel function to avoid browser CORS failures.
   if (provider === 'xingchi') {
