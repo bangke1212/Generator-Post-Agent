@@ -85,16 +85,21 @@ export default function Settings() {
     // Keep the last successful catalogue visible while refreshing; replace it only after success.
     setModelSyncMessage('Memperbarui katalog CrowLLM...');
     try {
-      const models = await fetchCrowllmFreeModels(keyToUse);
+      const catalog = await fetchCrowllmFreeModels(keyToUse);
+      const models = catalog.models;
+      const catalogNotes = [
+        catalog.partial ? `Katalog besar: ${catalog.checkedCandidates} dari ${catalog.totalCandidates} kandidat diperiksa untuk menghindari timeout.` : '',
+        catalog.timedOutModelPages ? `${catalog.timedOutModelPages} halaman model lambat dilewati; sinkronkan ulang untuk mencoba lagi.` : '',
+      ].filter(Boolean).join(' ');
       setCrowllmModels(models);
-      setCrowllmSynced(true);
+      setCrowllmSynced(models.length > 0);
       if (models.length > 0) {
         setModel(models.some(item => item.id === model) ? model : models[0].id);
-        setModelSyncMessage(`${models.length} model gratis chat terverifikasi tersedia untuk API key ini. Status dan latency diambil dari CrowLLM.`);
+        setModelSyncMessage(`${models.length} model gratis chat terverifikasi tersedia untuk API key ini. Status dan latency diambil dari CrowLLM. ${catalogNotes}`.trim());
         showToast('success', `${models.length} model gratis CrowLLM berhasil disinkronkan.`);
       } else {
-        setModel('');
-        setModelSyncMessage('Tidak ada model gratis dari katalog CrowLLM yang tersedia untuk API key ini. Periksa paket, token scope, atau status provider.');
+        setModel(CROWLLM_FREE_MODELS[0]?.id || '');
+        setModelSyncMessage(`Belum ada model gratis yang berhasil diverifikasi untuk API key ini. Kandidat tetap ditampilkan sebagai pilihan awal, tetapi belum bisa dipakai. ${catalogNotes} Periksa key, scope, atau coba sinkronkan lagi.`.trim());
       }
     } catch (e: any) {
       setModelSyncMessage(e.message || 'Gagal mengambil daftar model CrowLLM.');

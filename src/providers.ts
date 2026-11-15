@@ -43,7 +43,15 @@ export const CROWLLM_FREE_MODELS: ModelConfig[] = [
   { id: 'deepseek-v4.1-flash-uncensored:free', name: 'DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat dengan output tanpa penyaring tertentu; tinjau hasilnya.' },
 ];
 
-export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfig[]> {
+export interface CrowllmCatalogResult {
+  models: ModelConfig[];
+  partial: boolean;
+  checkedCandidates: number;
+  totalCandidates: number;
+  timedOutModelPages: number;
+}
+
+export async function fetchCrowllmFreeModels(apiKey: string): Promise<CrowllmCatalogResult> {
   let response: Response;
   try {
     response = await fetch('/api/crowllm', {
@@ -61,7 +69,7 @@ export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfi
   if (!Array.isArray(payload?.models)) {
     throw new Error('Respons katalog CrowLLM tidak berisi daftar model yang valid.');
   }
-  return payload.models
+  const models = payload.models
     .filter((item: any) => typeof item?.id === 'string' && item.free === true)
     .map((item: any): ModelConfig => {
       const recommended = CROWLLM_FREE_MODELS.find((candidate) => candidate.id === item.id);
@@ -81,6 +89,13 @@ export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfi
       };
     })
     .sort((a: ModelConfig, b: ModelConfig) => Number(Boolean(b.recommended)) - Number(Boolean(a.recommended)));
+  return {
+    models,
+    partial: payload.partial === true,
+    checkedCandidates: Number.isFinite(payload.checkedCandidates) ? payload.checkedCandidates : models.length,
+    totalCandidates: Number.isFinite(payload.totalCandidates) ? payload.totalCandidates : models.length,
+    timedOutModelPages: Number.isFinite(payload.timedOutModelPages) ? payload.timedOutModelPages : 0,
+  };
 }
 
 export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {

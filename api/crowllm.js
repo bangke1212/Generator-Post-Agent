@@ -36,6 +36,33 @@ function hasZeroPricingMetadata(item) {
   return pairs.some(([input, output]) => zeroMetadataPrice(input) && zeroMetadataPrice(output));
 }
 
+const CURATED_MODEL_IDS = [
+  'agnes-2.5-flash:free',
+  'beam-1.0:free',
+  'caw/glm-5.3-flash:free',
+  'crouton-alpha:free',
+  'crow-code-limitless:free',
+  'crow-uncensored:free',
+  'crow/auto:free',
+  'minimax-m3.1-flash:free',
+  'muse-spark-1.1:free',
+  'nvidia/nemotron-3.5-bolt-e4b:free',
+  'deepseek-v4.1-flash-uncensored:free',
+];
+const CURATED_MODEL_ID_SET = new Set(CURATED_MODEL_IDS);
+const CATALOG_TIMEOUT_MS = 7000;
+const STATUS_TIMEOUT_MS = 2500;
+const MODEL_PAGE_TIMEOUT_MS = 3500;
+const MODEL_PAGE_FALLBACK_TIMEOUT_MS = 1500;
+const MODEL_PAGE_CONCURRENCY = 8;
+const MAX_EXTRA_MODEL_CANDIDATES = 8;
+
+function isTimeoutError(error) {
+  const message = String(error?.message || error || '');
+  return error?.name === 'TimeoutError' || error?.name === 'AbortError'
+    || /timed? ?out|aborted due to timeout/i.test(message);
+}
+
 function parseMetrics(html, modelId, modelIds = []) {
   const text = htmlText(html);
   const index = text.toLowerCase().indexOf(modelId.toLowerCase());
@@ -91,12 +118,33 @@ async function mapWithConcurrency(items, limit, mapper) {
   return results;
 }
 
+async function fetchModelPage(id) {
+  const pathId = id.split('/').map(encodeURIComponent).join('/');
+  try {
+    return { id, html: await fetchText(CROWLLM + '/models/' + pathId, MODEL_PAGE_TIMEOUT_MS), timedOut: false };
+  } catch (error) {
+    if (isTimeoutError(error)) return { id, html: '', timedOut: true };
+    if (!(error instanceof Error) || !/HTTP 404\b/.test(error.message)) return null;
+    try {
+      return { id, html: await fetchText(CROWLLM + '/models/' + encodeURIComponent(id), MODEL_PAGE_FALLBACK_TIMEOUT_MS), timedOut: false };
+    } catch (fallbackError) {
+      return isTimeoutError(fallbackError) ? { id, html: '', timedOut: true } : null;
+    }
+  }
+}
+
 async function getFreeChatModels(apiKey) {
-  const response = await fetch(CROWLLM + '/v1/models', {
-    headers: { Authorization: 'Bearer ' + apiKey },
-    signal: AbortSignal.timeout(10000),
-    cache: 'no-store',
-  });
+  let response;
+  try {
+    response = await fetch(CROWLLM + '/v1/models', {
+      headers: { Authorization: 'Bearer ' + apiKey },
+      signal: AbortSignal.timeout(CATALOG_TIMEOUT_MS),
+      cache: 'no-store',
+    });
+  } catch (error) {
+    if (isTimeoutError(error)) throw new Error(`CrowLLM /v1/models timed out after ${CATALOG_TIMEOUT_MS / 1000} seconds.`);
+    throw error;
+  }
   const payloadText = await response.text();
   let payload;
   try { payload = JSON.parse(payloadText); }
@@ -107,31 +155,32 @@ async function getFreeChatModels(apiKey) {
 
   const rows = Array.isArray(payload?.data) ? payload.data : [];
   const ids = [...new Set(rows.map(item => item?.id).filter(id => typeof id === 'string' && id.trim()))];
-  if (!ids.length) return [];
+  if (!ids.length) return { models: [], partial: false, checkedCandidates: 0, totalCandidates: 0, timedOutModelPages: 0 };
 
   // :free is only a discovery hint. Each candidate's official model page is checked
   // for zero input/output price AND a chat-completions endpoint before it is shown.
-  const candidates = [...new Set(rows.filter(item => typeof item?.id === 'string' && (item.id.endsWith(':free') || hasZeroPricingMetadata(item))).map(item => item.id))];
-  if (!candidates.length) return [];
+  const allCandidates = [...new Set(rows.filter(item => typeof item?.id === 'string' && (item.id.endsWith(':free') || hasZeroPricingMetadata(item))).map(item => item.id))];
+  const available = new Set(allCandidates);
+  const orderedCandidates = [
+    ...CURATED_MODEL_IDS.filter(id => available.has(id)),
+    ...allCandidates.filter(id => !CURATED_MODEL_ID_SET.has(id)),
+  ];
+  const candidates = orderedCandidates.slice(0, CURATED_MODEL_IDS.length + MAX_EXTRA_MODEL_CANDIDATES);
+  if (!candidates.length) return { models: [], partial: false, checkedCandidates: 0, totalCandidates: 0, timedOutModelPages: 0 };
+  const curatedCandidates = candidates.filter(id => CURATED_MODEL_ID_SET.has(id));
+  const extraCandidates = candidates.filter(id => !CURATED_MODEL_ID_SET.has(id));
 
-  // Fetch the public status page and model detail pages concurrently.
-  // The suffix is only a discovery hint: page pricing and chat endpoint are still verified.
-  const statusPromise = fetchText(CROWLLM + '/status', 6000).catch(() => '');
-  const detailPagesPromise = mapWithConcurrency(candidates, 32, async id => {
-    // Preserve vendor/model path separators; encode each model ID segment separately.
-    const pathId = id.split('/').map(encodeURIComponent).join('/');
-    try {
-      return { id, html: await fetchText(CROWLLM + '/models/' + pathId, 6000) };
-    } catch (error) {
-      // Only retry alternate URL encoding for a genuine 404. Retrying timeouts
-      // doubles the wait and can push the Vercel function past its execution limit.
-      if (!(error instanceof Error) || !/HTTP 404\b/.test(error.message)) throw error;
-      return { id, html: await fetchText(CROWLLM + '/models/' + encodeURIComponent(id), 4000) };
-    }
-  });
-  const [statusHtml, detailPages] = await Promise.all([statusPromise, detailPagesPromise]);
+  // Check curated IDs first. Bound total work to stay inside Vercel's function runtime.
+  const statusPromise = fetchText(CROWLLM + '/status', STATUS_TIMEOUT_MS).catch(() => '');
+  const [statusHtml, curatedPages] = await Promise.all([
+    statusPromise,
+    mapWithConcurrency(curatedCandidates, MODEL_PAGE_CONCURRENCY, fetchModelPage),
+  ]);
+  const extraPages = await mapWithConcurrency(extraCandidates, MODEL_PAGE_CONCURRENCY, fetchModelPage);
+  const detailPages = [...curatedPages, ...extraPages];
+  const timedOutModelPages = detailPages.filter(page => page?.timedOut).length;
 
-  const verified = detailPages.filter(Boolean).map(({ id, html: detailHtml }) => {
+  const verified = detailPages.filter(page => page && !page.timedOut).map(({ id, html: detailHtml }) => {
     const detailText = htmlText(detailHtml);
     // CrowLLM model pages label the endpoint as 'Endpoints chat'; do not require the URL sample to be present.
     const endpointLabel = detailText.match(/Endpoints\s+([a-z0-9,\s-]{1,120})/i)?.[1] || '';
@@ -154,12 +203,19 @@ async function getFreeChatModels(apiKey) {
       ...metrics,
     };
   });
-  return verified.filter(Boolean).sort((a, b) => {
+  const models = verified.filter(Boolean).sort((a, b) => {
     const rank = { healthy: 0, degraded: 1, unstable: 2, unavailable: 3, no_data: 4 };
     return (rank[a.status] ?? 5) - (rank[b.status] ?? 5)
       || (b.successRate ?? -1) - (a.successRate ?? -1)
       || (a.averageLatencyMs ?? Number.MAX_SAFE_INTEGER) - (b.averageLatencyMs ?? Number.MAX_SAFE_INTEGER);
   });
+  return {
+    models,
+    partial: orderedCandidates.length > candidates.length,
+    checkedCandidates: candidates.length,
+    totalCandidates: orderedCandidates.length,
+    timedOutModelPages,
+  };
 }
 
 export default async function handler(req, res) {
@@ -175,16 +231,23 @@ export default async function handler(req, res) {
 
   if (action === 'models') {
     try {
-      const models = await getFreeChatModels(apiKey.trim());
+      const catalog = await getFreeChatModels(apiKey.trim());
       res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({
-        models,
+        ...catalog,
         statusUrl: CROWLLM + '/status',
         checkedAt: new Date().toISOString(),
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown CrowLLM error';
-      return res.status(502).json({ error: { message: 'Gagal mengambil katalog CrowLLM: ' + message } });
+      const timedOut = isTimeoutError(error);
+      return res.status(timedOut ? 504 : 502).json({
+        error: {
+          message: timedOut
+            ? 'Katalog CrowLLM masih timeout saat mengambil daftar model. Coba sinkronkan lagi beberapa saat.'
+            : 'Gagal mengambil katalog CrowLLM: ' + message,
+        },
+      });
     }
   }
 
