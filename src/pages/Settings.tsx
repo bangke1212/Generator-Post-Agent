@@ -78,6 +78,8 @@ export default function Settings() {
     const keyToUse = apiKey.trim() || keys.find(k => k.provider === 'crowllm')?.api_key || '';
     if (!keyToUse) { showToast('error', 'Masukkan API Key CrowLLM dulu'); return; }
     setSyncingModels(true);
+    setCrowllmSynced(false);
+    setCrowllmModels([]);
     setModelSyncMessage('');
     try {
       const models = await fetchCrowllmFreeModels(keyToUse);
