@@ -162,6 +162,7 @@ export interface ModelOptimalParams {
 }
 
 export function getModelParams(provider: string, model: string): ModelOptimalParams {
+  if (provider === 'crowllm') return { temperature: 0.82, maxTokens: 1400 };
   const preset = PROVIDER_PRESETS[provider];
   if (!preset) return { temperature: 0.85, maxTokens: 700 };
   const m = preset.models.find(x => x.id === model);
