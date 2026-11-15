@@ -209,7 +209,7 @@ export default function Settings() {
           <div className="flex flex-col sm:flex-row gap-2">
             <select value={model} onChange={e => handleModelChange(e.target.value)} className="input flex-1" disabled={modelOptions.length === 0}>
               {modelOptions.map((m: ModelConfig) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
+                <option key={m.id} value={m.id}>{m.recommended ? `★ ${m.id} · rekomendasi` : m.name}</option>
               ))}
             </select>
             {provider === 'crowllm' && (
@@ -221,7 +221,7 @@ export default function Settings() {
           {provider === 'crowllm' && (
             <div>
             <p className="text-xs text-[#666680] mt-2">
-              Daftar model diambil langsung dari <code>/v1/models</code>. Setiap kandidat diperiksa ke halaman model CrowLLM: harga input/output harus $0 dan endpoint chat completions harus tersedia.{' '}
+              Daftar diambil dari <code>/v1/models</code> dan divalidasi: harga input/output harus $0 serta endpoint chat tersedia. Sepuluh model rekomendasi ditandai ★ bila tersedia untuk API key ini. Tier Free memiliki batas umum beberapa panggilan per menit; CrowLLM tidak mencantumkan RPM khusus per model.{' '}
               <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live CrowLLM</a>.
               {modelSyncMessage && <span className="block mt-1 text-[#9494b8]">{modelSyncMessage}</span>}
             </p>

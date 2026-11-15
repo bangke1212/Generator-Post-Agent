@@ -59,6 +59,10 @@ CrowLLM uses the OpenAI-compatible base URL `https://crowllm.com/v1`. Add your C
 
 The app retrieves the account-visible IDs directly from `GET /v1/models`. The `:free` suffix is used only to identify candidates, not as proof that a model is suitable: the Vercel proxy checks each candidate's official CrowLLM model page and includes it only when both input/output prices are zero and the page exposes the `/v1/chat/completions` endpoint. Embedding, reranking, speech, and other non-chat models are excluded. The selected model ID is the exact ID returned by CrowLLM.
 
+These 10 curated models are highlighted with ★ when they are available to the supplied key and pass the same live price/endpoint checks: `agnes-2.5-flash:free`, `beam-1.0:free`, `caw/glm-5.3-flash:free`, `crouton-alpha:free`, `crow-code-limitless:free`, `crow/auto:free`, `minimax-m3.1-flash:free`, `muse-spark-1.1:free`, `nvidia/nemotron-3.5-bolt-e4b:free`, and `deepseek-v4.1-flash-uncensored:free`. `crow/auto:free` is an automatic router, not one fixed underlying model. Availability can vary by API key and can change over time.
+
+CrowLLM describes the Free tier limit as a handful of calls per minute; it does not publish an exact per-model RPM in the public catalog. Check the current [pricing page](https://crowllm.com/pricing) and each model page before relying on free-tier throughput.
+
 For each verified chat model, Settings also displays its 24-hour success rate and average latency using CrowLLM's live [status page](https://crowllm.com/status), with the model detail page as a fallback when the status table has no row. Models are sorted with healthier, faster models first. "No data" means CrowLLM did not publish a usable metric for that model; it is not a claim that the model is offline.
 
 Model discovery and chat completions both go through the same-origin Vercel function (`/api/crowllm`) to avoid browser CORS failures. The proxy forwards requests to CrowLLM and does not log API keys.

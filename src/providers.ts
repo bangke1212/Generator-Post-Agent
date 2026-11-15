@@ -8,6 +8,7 @@ export interface ModelConfig {
   id: string;
   name: string;
   free?: boolean;
+  recommended?: boolean;
   temperature: number;
   maxTokens: number;
   strengths: string[];
@@ -28,7 +29,18 @@ export interface ProviderConfig {
   rateLimitNote?: string;
 }
 
-export const CROWLLM_FREE_MODELS: ModelConfig[] = [];
+export const CROWLLM_FREE_MODELS: ModelConfig[] = [
+  { id: 'agnes-2.5-flash:free', name: 'Agnes 2.5 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'beam-1.0:free', name: 'Beam 1.0', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'caw/glm-5.3-flash:free', name: 'GLM 5.3 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'crouton-alpha:free', name: 'Crouton Alpha', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'crow-code-limitless:free', name: 'Crow Code Limitless', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'coding'], bestFor: 'Coding dan chat.' },
+  { id: 'crow/auto:free', name: 'Crow Auto Free', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Router otomatis ke model free yang tersedia.' },
+  { id: 'minimax-m3.1-flash:free', name: 'MiniMax M3.1 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'muse-spark-1.1:free', name: 'Muse Spark 1.1', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'nvidia/nemotron-3.5-bolt-e4b:free', name: 'NVIDIA Nemotron 3.5 Bolt E4B', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'deepseek-v4.1-flash-uncensored:free', name: 'DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat dengan output tanpa penyaring tertentu; tinjau hasilnya.' },
+];
 
 export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfig[]> {
   let response: Response;
@@ -50,19 +62,24 @@ export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfi
   }
   return payload.models
     .filter((item: any) => typeof item?.id === 'string' && item.free === true)
-    .map((item: any): ModelConfig => ({
-      id: item.id,
-      name: item.id,
-      free: true,
-      temperature: 0.82,
-      maxTokens: 1400,
-      strengths: ['chat'],
-      bestFor: 'Verified free CrowLLM chat model.',
-      status: item.status || 'no_data',
-      successRate: typeof item.successRate === 'number' ? item.successRate : null,
-      averageLatencyMs: typeof item.averageLatencyMs === 'number' ? item.averageLatencyMs : null,
-      requests24h: typeof item.requests24h === 'number' ? item.requests24h : null,
-    }));
+    .map((item: any): ModelConfig => {
+      const recommended = CROWLLM_FREE_MODELS.find((candidate) => candidate.id === item.id);
+      return {
+        id: item.id,
+        name: recommended ? `★ ${recommended.name}` : item.id,
+        free: true,
+        recommended: Boolean(recommended),
+        temperature: recommended?.temperature ?? 0.82,
+        maxTokens: recommended?.maxTokens ?? 1400,
+        strengths: recommended?.strengths ?? ['chat'],
+        bestFor: recommended?.bestFor ?? 'Model chat CrowLLM terverifikasi gratis.',
+        status: item.status || 'no_data',
+        successRate: typeof item.successRate === 'number' ? item.successRate : null,
+        averageLatencyMs: typeof item.averageLatencyMs === 'number' ? item.averageLatencyMs : null,
+        requests24h: typeof item.requests24h === 'number' ? item.requests24h : null,
+      };
+    })
+    .sort((a: ModelConfig, b: ModelConfig) => Number(Boolean(b.recommended)) - Number(Boolean(a.recommended)));
 }
 
 export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
@@ -86,7 +103,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     icon: '🐦‍⬛',
     baseUrl: 'https://crowllm.com/v1',
     docs: 'https://crowllm.com/keys',
-    rateLimitNote: 'Model gratis yang tersedia untuk API key akan disinkronkan dari GET /v1/models. Cek status live sebelum digunakan.',
+    rateLimitNote: 'Tier Free CrowLLM membatasi penggunaan hingga beberapa panggilan per menit; limit RPM khusus tiap model tidak dipublikasikan. Model yang terverifikasi untuk API key Anda disinkronkan dari GET /v1/models.',
     models: [],
   },
   openai: {
