@@ -3,7 +3,6 @@
 // For You Feed + Following Feed + Explore/Trending
 
 import { callAI, getModelParams, getModelProfile } from './providers';
-import { getActiveApiKey } from './store';
 
 export interface GeneratedIdea {
   id: number;
@@ -178,16 +177,16 @@ function getLanguageInstructions(language: string) {
 
 export async function generateContent(opts: { topic?: string; language?: string; tone?: string }) {
   const { topic = 'general', language = 'id' } = opts;
-  const key = getActiveApiKey();
-  if (!key) return { content: '⚠️ Belum ada API key aktif. Buka Settings → pilih provider → input key → Simpan & Aktifkan.', emoji_count: 0, topic, provider: 'none' };
+  const provider = 'xingchi';
+  const model = 'gpt-6.1-sol';
 
   const normalizedLanguage = language === 'en' ? 'en' : 'id';
   const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
   const langGuidelines = getLanguageInstructions(normalizedLanguage);
 
-  const modelHint = getModelStrengthHint(key.provider, key.model);
-  const modelConstraints = getPerModelConstraints(key.provider, key.model);
-  const optimal = getModelParams(key.provider, key.model);
+  const modelHint = getModelStrengthHint(provider, model);
+  const modelConstraints = getPerModelConstraints(provider, model);
+  const optimal = getModelParams(provider, model);
 
   const prompt = `KAMU ADALAH GHOSTWRITER TWITTER PROFESIONAL. BUATKAN 1 TWEET VIRAL.
 
@@ -217,15 +216,14 @@ ${ALGO_ANTI_PENALTY}
 - HARUS ada opini personal yang tajam
 - HARUS menggunakan emoji yang match emosi
 - Tone harus konsisten di seluruh tweet
-- JANGAN lebih pendek dari 120 kata atau lebih panjang dari 150 kata
+- JANGAN melebihi 220 karakter; satu post saja, bukan thread
 
 TULIS TWEET-NYA SAJA, TANPA LABEL, TANPA HEADER:`;
 
   try {
     const result = await callAI({
-      provider: key.provider,
-      apiKey: key.api_key,
-      model: key.model,
+      provider: provider,
+      model: model,
       prompt,
       maxTokens: optimal.maxTokens,
       temperature: optimal.temperature,
@@ -256,16 +254,16 @@ REPLY BAIT: "Relate angkat tangan 💀", "Yang ngerasa kena, sini ngaku 👇"`,
 
 export async function generateIdeas(opts: { idea: string; language?: string; tone?: string; count?: number }) {
   const { idea, language = 'id', tone = 'supportif', count = 5 } = opts;
-  const key = getActiveApiKey();
-  if (!key) return { ideas: [] as GeneratedIdea[], provider: 'none' };
+  const provider = 'xingchi';
+  const model = 'gpt-6.1-sol';
 
   const normalizedLanguage = language === 'en' ? 'en' : 'id';
   const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
   const langGuidelines = getLanguageInstructions(normalizedLanguage);
   const maxCount = Math.min(count, 10);
-  const optimal = getModelParams(key.provider, key.model);
-  const modelHint = getModelStrengthHint(key.provider, key.model);
-  const modelConstraints = getPerModelConstraints(key.provider, key.model);
+  const optimal = getModelParams(provider, model);
+  const modelHint = getModelStrengthHint(provider, model);
+  const modelConstraints = getPerModelConstraints(provider, model);
 
   const prompt = `KAMU ADALAH GHOSTWRITER TWITTER PROFESIONAL. BUATKAN ${maxCount} VARIASI TWEET.
 
@@ -303,9 +301,8 @@ TULIS ${maxCount} TWEET:`;
 
   try {
     const result = await callAI({
-      provider: key.provider,
-      apiKey: key.api_key,
-      model: key.model,
+      provider: provider,
+      model: model,
       prompt,
       maxTokens: optimal.maxTokens * 2,
       temperature: optimal.temperature,
@@ -330,7 +327,7 @@ TULIS ${maxCount} TWEET:`;
       hook_type: hookTypes[i % hookTypes.length],
     }));
 
-    return { ideas, provider: key.provider };
+    return { ideas, provider: 'xingchi' };
   } catch (e: any) {
     return { ideas: [] as GeneratedIdea[], provider: 'error' };
   }
