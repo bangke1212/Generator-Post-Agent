@@ -1,18 +1,24 @@
 import {useEffect,useState} from 'react';
-import {testConnection} from '../providers';
+import {testConnection, PROVIDER_PRESETS, getSelectedModel, setSelectedModel} from '../providers';
 type Config={appAuthConfigured:boolean;sessionValid:boolean;aiConfigured:boolean;xConfigured:boolean;model:string;baseUrl:string};
 export default function Settings(){
- const [config,setConfig]=useState<Config|null>(null),[loading,setLoading]=useState(true),[password,setPassword]=useState(''),[loginBusy,setLoginBusy]=useState(false),[testing,setTesting]=useState(false),[test,setTest]=useState<{success:boolean;error?:string}|null>(null),[message,setMessage]=useState('');
+ const [selectedModel,setSelected]=useState(getSelectedModel()),[config,setConfig]=useState<Config|null>(null),[loading,setLoading]=useState(true),[password,setPassword]=useState(''),[loginBusy,setLoginBusy]=useState(false),[testing,setTesting]=useState(false),[test,setTest]=useState<{success:boolean;error?:string}|null>(null),[message,setMessage]=useState('');
  const refresh=async()=>{setLoading(true);try{const r=await fetch('/.netlify/functions/config');setConfig(await r.json());}catch{setMessage('Tidak dapat menghubungi server Netlify.')}finally{setLoading(false);}};
  useEffect(()=>{void refresh();},[]);
  const login=async()=>{setLoginBusy(true);setMessage('');try{const r=await fetch('/.netlify/functions/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Login gagal');setPassword('');await refresh();setMessage('Login berhasil. Dashboard siap digunakan.');}catch(e){setMessage(e instanceof Error?e.message:'Login gagal');}finally{setLoginBusy(false);}};
  const logout=async()=>{await fetch('/.netlify/functions/logout',{method:'POST'});setTest(null);await refresh();setMessage('Anda sudah logout.');};
- const runTest=async()=>{setTesting(true);setTest(null);setTest(await testConnection());setTesting(false);};
+ const chooseModel=(id:string)=>{setSelectedModel(id);setSelected(id);setTest(null);};\n const runTest=async()=>{setTesting(true);setTest(null);setTest(await testConnection(selectedModel));setTesting(false);};
  return <div className="space-y-6 animate-fade-in">
  <div><h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🔐</span> Koneksi & Pengaturan</h2><p className="text-sm text-[#91a0b5] mt-1">Kelola akses dashboard dan koneksi Xingchi. Secret hanya disimpan di server Netlify.</p></div>
  <section className="card-glow space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Akses dashboard</h3><span className={config?.sessionValid?'badge badge-success':'badge badge-warning'}>{config?.sessionValid?'Login aktif':'Belum login'}</span></div>
  {loading?<p className="text-sm text-[#91a0b5]">Memeriksa sesi…</p>:!config?.appAuthConfigured?<p className="text-sm text-[#f2b96b]">Atur APP_ACCESS_PASSWORD dan APP_SESSION_SECRET di Netlify Environment Variables, lalu redeploy.</p>:config.sessionValid?<div className="flex items-center justify-between gap-3"><p className="text-sm text-[#45d9c0]">Sesi aktif selama 7 hari pada browser ini.</p><button onClick={logout} className="btn-outline">Logout</button></div>:<div className="flex flex-col sm:flex-row gap-3"><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} placeholder="Password dashboard" className="input" autoComplete="current-password"/><button onClick={login} disabled={loginBusy||!password} className="btn-primary">{loginBusy?'Memeriksa…':'Masuk dashboard'}</button></div>}
  {message&&<p className="text-sm text-[#aab6c7]">{message}</p>}</section>
+ <section className="card-glow space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Model OpenAI</h3><span className="badge badge-info">via Xingchi API</span></div>
+ <p className="text-sm text-[#91a0b5]">Pilih model untuk membuat post. Pilihan disimpan di browser ini.</p>
+ <div className="grid sm:grid-cols-2 gap-3">{PROVIDER_PRESETS.xingchi.models.map(m=><button key={m.id} type="button" onClick={()=>chooseModel(m.id)} className={`text-left rounded-xl border p-4 transition-all ${selectedModel===m.id?'border-[#8b9cff] bg-[#8b9cff]/10 shadow-lg shadow-[#8b9cff]/10':'border-[#263448] bg-[#0b121e] hover:border-[#52627a]'}`}>
+ <div className="flex items-start justify-between gap-2"><span className="font-semibold">{m.name}</span>{selectedModel===m.id&&<span className="text-[#8b9cff]">✓</span>}</div>
+ <p className="text-xs text-[#91a0b5] mt-2">{m.bestFor}</p><span className="inline-block mt-3 text-[11px] rounded-full bg-[#263448] px-2 py-1 text-[#c4d0e0]">{m.recommendation}</span></button>)}</div>
+ <p className="text-xs text-[#f2b96b]">Daftar model mengikuti katalog gateway. Model mungkin ditolak jika belum diaktifkan untuk API key Xingchi Anda.</p></section>
  <section className="card-glow space-y-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Xingchi AI Gateway</h3><span className="badge badge-info">Server-side</span></div>
  {loading?<p className="text-sm text-[#91a0b5]">Memeriksa konfigurasi…</p>:<div className="grid sm:grid-cols-2 gap-3">
  <div className="rounded-xl border border-[#263448] bg-[#0b121e] p-4"><p className="text-xs text-[#91a0b5]">API KEY</p><p className="mt-2 font-semibold">{config?.aiConfigured?'● Tersimpan di server':'○ Belum diatur'}</p></div>
