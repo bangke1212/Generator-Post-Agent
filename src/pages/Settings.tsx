@@ -204,7 +204,8 @@ export default function Settings() {
           </div>
           {provider === 'crowllm' && (
             <p className="text-xs text-[#666680] mt-2">
-              Model katalog awal hanya yang terverifikasi gratis. Sinkronkan untuk memastikan model tersebut tersedia pada API key akunmu.
+              Model katalog awal hanya yang terverifikasi gratis. Sinkronkan untuk memastikan model tersebut tersedia pada API key akunmu.{' '}
+              <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#6366f1] hover:text-[#818cf8]">Lihat status live</a>.
               {modelSyncMessage && <span className="block mt-1 text-[#9494b8]">{modelSyncMessage}</span>}
             </p>
           )}
