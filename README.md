@@ -65,7 +65,9 @@ The app includes a curated free chat-model list:
 - `agnes-2.5-flash:free`
 - `laguna-s-2-1:free`
 
-Use **Sinkronkan model free** in Settings to call `GET /v1/models` and intersect the catalogue with models available to your key. The list is intentionally limited to chat models; embedding, reranking, and text-to-speech models are not valid choices for post generation.
+Use **Sinkronkan model free** in Settings to retrieve `GET /v1/models` through the same-origin Vercel function (`/api/crowllm`) and intersect the catalogue with models available to your key. Chat completions also go through this backend proxy, avoiding browser CORS failures against CrowLLM. The proxy forwards requests to CrowLLM and does not log API keys. The list is intentionally limited to chat models; embedding, reranking, and text-to-speech models are not valid choices for post generation.
+
+**Deployment note:** Redeploy the latest `main` branch on Vercel so the `/api/crowllm` serverless function is available. The browser sends the key to your own Vercel deployment, which then forwards it to CrowLLM over HTTPS; keep the Vercel project and browser session trusted.
 
 **Availability note:** Free status, upstream capacity, account eligibility, and rate limits can change. Check the [CrowLLM live status](https://crowllm.com/status) and each [model page](https://crowllm.com/models) before relying on a model. A model being listed does not guarantee that it is currently serving requests.
 
