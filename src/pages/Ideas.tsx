@@ -197,7 +197,7 @@ export default function Ideas({ onTabChange }: Props) {
               <div className="bg-[#0d0d25] rounded-xl p-4 border border-[#1e1e4a]">
                 <p className="text-sm leading-[1.8] whitespace-pre-wrap text-[#d4d4e8]">{item.content.length > 280 ? item.content.slice(0, 280) + '...' : item.content}</p>
               </div>
-              <div className="mt-2 text-[10px] text-[#666680]">~{item.content.split(/\s+/).length} kata</div>
+              <div className="mt-2 text-[10px] text-[#666680]">{item.content.length}/280 karakter</div>
             </div>
           ))}
         </div>
