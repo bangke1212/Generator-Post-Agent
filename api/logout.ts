@@ -1,0 +1,1 @@
+export default function handler(req:any,res:any){res.setHeader('Set-Cookie','postpilot_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');res.setHeader('Cache-Control','no-store');return res.status(200).json({success:true});}
