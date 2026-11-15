@@ -30,8 +30,20 @@ export default async function handler(req, res) {
     });
 
     const body = await upstream.text();
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || 'application/json');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
+
+    // Xingchi explicitly blocks requests from scripts, SDKs and third-party chat apps.
+    // Surface that policy clearly instead of showing a generic connection failure.
+    if (/仅支持编程客户端|脚本.{0,12}SDK直连|第三方聊天客户端/.test(body)) {
+      return res.status(403).json({
+        error: {
+          code: 'XINGCHI_CLIENT_NOT_SUPPORTED',
+          message: 'Xingchi menolak aplikasi Generator Post Agent karena hanya mengizinkan klien pemrograman resminya (mis. Codex, Claude Code, Cursor, Cline). Integrasi aplikasi pihak ketiga seperti ini belum diizinkan oleh Xingchi. Gunakan penyedia API lain di aplikasi ini atau minta Xingchi membuka akses OpenAI-compatible untuk aplikasi pihak ketiga.'
+        }
+      });
+    }
+
     return res.status(upstream.status).send(body);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown upstream error';
