@@ -68,7 +68,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     name: 'CrowLLM',
     icon: '🐦‍⬛',
     baseUrl: 'https://crowllm.com/v1',
-    docs: 'https://crowllm.com/',
+    docs: 'https://crowllm.com/keys',
     rateLimitNote: 'Model gratis yang tersedia untuk API key akan disinkronkan dari GET /v1/models. Cek status live sebelum digunakan.',
     models: CROWLLM_FREE_MODELS,
   },
