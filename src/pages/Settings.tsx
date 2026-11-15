@@ -243,6 +243,7 @@ export default function Settings() {
                 {crowllmModels.length === 0 && <p className="text-xs text-[#fbbf24]">Tidak ada model gratis yang lolos verifikasi endpoint chat.</p>}
               </div>
             )}
+            </div>
           )}
         </div>
 
