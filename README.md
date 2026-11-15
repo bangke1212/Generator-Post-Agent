@@ -104,3 +104,17 @@ MIT
 ---
 
 Built with ❤️ for the X algorithm era.
+
+
+## Deploy ke Vercel
+
+Project ini menggunakan Vercel Serverless Functions pada folder `api/`. Import repository ke Vercel, pilih framework Vite, build command `npm run build`, output directory `dist`, dan Node.js 22. Tambahkan environment variables berikut di Vercel Project Settings → Environment Variables, lalu redeploy:
+
+- `APP_ACCESS_PASSWORD`: password dashboard.
+- `APP_SESSION_SECRET`: secret acak minimal 32 karakter.
+- `XINGCHI_API_KEY`: API key Xingchi (simpan hanya di server).
+- `XINGCHI_BASE_URL`: `https://api.xingchiapi.com/v1`.
+- `XINGCHI_MODEL`: `gpt-6.1-sol` (sesuaikan dengan model yang aktif di akun Xingchi).
+- `X_USER_ACCESS_TOKEN`: opsional, OAuth 2.0 User Context token X dengan scope `tweet.write`.
+
+API routes: `/api/login`, `/api/logout`, `/api/config`, `/api/ai`, dan `/api/publish`.
