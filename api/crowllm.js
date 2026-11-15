@@ -36,12 +36,18 @@ function hasZeroPricingMetadata(item) {
   return pairs.some(([input, output]) => zeroMetadataPrice(input) && zeroMetadataPrice(output));
 }
 
-function parseMetrics(html, modelId) {
+function parseMetrics(html, modelId, modelIds = []) {
   const text = htmlText(html);
   const index = text.toLowerCase().indexOf(modelId.toLowerCase());
-  const context = index >= 0
-    ? text.slice(Math.max(0, index - 500), index + 2200)
-    : text;
+  if (index < 0) {
+    return { status: 'no_data', successRate: null, averageLatencyMs: null, requests24h: null };
+  }
+  const nextModelPositions = modelIds
+    .filter(id => id !== modelId)
+    .map(id => text.toLowerCase().indexOf(id.toLowerCase(), index + modelId.length))
+    .filter(position => position >= 0);
+  const rowEnd = nextModelPositions.length ? Math.min(...nextModelPositions) : index + 2200;
+  const context = text.slice(Math.max(0, index - 300), Math.min(text.length, rowEnd));
   const successMatch = context.match(/(?:success rate|served within 24 hours)(?:\s*\(24h\))?[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)\s*%/i);
   const latencyMatch = context.match(/(?:average latency|whole response time|latency)(?:\s*\(24h\))?[^0-9]{0,70}([0-9][0-9,]*(?:\.[0-9]+)?)\s*(ms|msec|s|sec|seconds)\b/i);
   const requestsMatch = context.match(/requests?\s*(?:\(24h\))?[^0-9]{0,30}([0-9,]+)/i);
@@ -125,7 +131,7 @@ async function getFreeChatModels(apiKey) {
 
     // Prefer the live status page. Fall back to the official model detail page
     // when the status table does not expose a row for this model.
-    let metrics = parseMetrics(statusHtml, id);
+    let metrics = parseMetrics(statusHtml, id, ids);
     if (metrics.status === 'no_data') metrics = parseMetrics(detailHtml, id);
     return {
       id,
