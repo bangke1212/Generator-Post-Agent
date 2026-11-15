@@ -130,10 +130,10 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
   const { provider, apiKey, baseUrl, model, prompt, maxTokens, temperature } = params;
 
   const preset = PROVIDER_PRESETS[provider];
-  if (!preset) throw new Error(\`Provider \${provider} tidak dikenal\`);
+  if (!preset) throw new Error('Provider ' + provider + ' tidak dikenal');
 
   const endpoint = baseUrl || preset.baseUrl;
-  if (!endpoint) throw new Error(\`Base URL tidak diatur untuk \${provider}\`);
+  if (!endpoint) throw new Error('Base URL tidak diatur untuk ' + provider);
 
   const optimal = getModelParams(provider, model);
 
@@ -161,10 +161,10 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     try {
       data = JSON.parse(raw);
     } catch {
-      throw new Error(\`Backend Xingchi mengembalikan respons tidak valid (HTTP \${response.status}). Periksa deployment fungsi Vercel.\`);
+      throw new Error('Backend Xingchi mengembalikan respons tidak valid (HTTP ' + response.status + '). Periksa deployment fungsi Vercel.');
     }
     if (!response.ok) {
-      throw new Error(data?.error?.message || \`Xingchi API gagal (HTTP \${response.status})\`);
+      throw new Error(data?.error?.message || 'Xingchi API gagal (HTTP ' + response.status + ')');
     }
 
     const content = data?.choices?.[0]?.message?.content;
