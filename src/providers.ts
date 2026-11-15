@@ -24,6 +24,30 @@ export interface ProviderConfig {
   rateLimitNote?: string;
 }
 
+export const CROWLLM_FREE_MODELS: ModelConfig[] = [
+  { id: 'deepseek-v4-flash-uncensored:free', name: '🆓 DeepSeek V4 Flash Uncensored', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['creative', 'deep_reasoning', 'debate'], bestFor: 'Reasoning dan opini tajam.' },
+  { id: 'caw/glm-5.3-flash:free', name: '🆓 GLM 5.3 Flash', free: true, temperature: 0.85, maxTokens: 1400, strengths: ['natural_id', 'structured', 'reasoning'], bestFor: 'Post Bahasa Indonesia dan ide terstruktur.' },
+  { id: 'agnes-2.5-flash:free', name: '🆓 Agnes 2.5 Flash', free: true, temperature: 0.86, maxTokens: 1400, strengths: ['creative', 'natural_id', 'fast'], bestFor: 'Draft cepat dan konten kreatif.' },
+  { id: 'laguna-s-2-1:free', name: '🆓 Laguna S 2.1', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['reasoning', 'structured', 'technical'], bestFor: 'Konten analitis dan terstruktur.' },
+];
+
+export async function fetchCrowllmFreeModels(apiKey: string): Promise<ModelConfig[]> {
+  const response = await fetch('https://crowllm.com/v1/models', {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`CrowLLM gagal mengambil daftar model (HTTP ${response.status}): ${body.slice(0, 240)}`);
+  }
+  const payload = await response.json();
+  const available = new Set<string>(
+    Array.isArray(payload?.data)
+      ? payload.data.map((item: { id?: unknown }) => item?.id).filter((id: unknown): id is string => typeof id === 'string')
+      : [],
+  );
+  return CROWLLM_FREE_MODELS.filter(model => available.has(model.id));
+}
+
 export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
   openrouter: {
     name: 'OpenRouter',
@@ -39,6 +63,14 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       { id: 'qwen/qwen-2.5-7b-instruct', name: '🆓 Qwen 2.5 7B', free: true, temperature: 0.8, maxTokens: 600, strengths: ['multilingual', 'balanced'], bestFor: 'Bilingual content' },
       { id: 'microsoft/phi-4', name: '🆓 Phi-4', free: true, temperature: 0.75, maxTokens: 550, strengths: ['precise', 'safe'], bestFor: 'Safe & supportive' },
     ],
+  },
+  crowllm: {
+    name: 'CrowLLM',
+    icon: '🐦‍⬛',
+    baseUrl: 'https://crowllm.com/v1',
+    docs: 'https://crowllm.com/',
+    rateLimitNote: 'Model gratis yang tersedia untuk API key akan disinkronkan dari GET /v1/models. Cek status live sebelum digunakan.',
+    models: CROWLLM_FREE_MODELS,
   },
   openai: {
     name: 'OpenAI',
