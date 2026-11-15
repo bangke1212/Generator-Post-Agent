@@ -43,11 +43,11 @@ function parseMetrics(html, modelId) {
     ? text.slice(Math.max(0, index - 500), index + 2200)
     : text;
   const successMatch = context.match(/(?:success rate|served within 24 hours)(?:\s*\(24h\))?[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)\s*%/i);
-  const latencyMatch = context.match(/(?:average latency|whole response time|latency)(?:\s*\(24h\))?[^0-9]{0,70}([0-9]+(?:\.[0-9]+)?)\s*(ms|msec|s|sec|seconds)\b/i);
+  const latencyMatch = context.match(/(?:average latency|whole response time|latency)(?:\s*\(24h\))?[^0-9]{0,70}([0-9][0-9,]*(?:\.[0-9]+)?)\s*(ms|msec|s|sec|seconds)\b/i);
   const requestsMatch = context.match(/requests?\s*(?:\(24h\))?[^0-9]{0,30}([0-9,]+)/i);
   let averageLatencyMs = null;
   if (latencyMatch) {
-    averageLatencyMs = Number(latencyMatch[1]) * (/^(s|sec|seconds)$/i.test(latencyMatch[2] || '') ? 1000 : 1);
+    averageLatencyMs = Number(latencyMatch[1].replace(/,/g, '')) * (/^(s|sec|seconds)$/i.test(latencyMatch[2] || '') ? 1000 : 1);
   }
   const successRate = successMatch ? Number(successMatch[1]) : null;
   let status = 'no_data';
@@ -105,7 +105,7 @@ async function getFreeChatModels(apiKey) {
 
   // :free is only a discovery hint. Each candidate's official model page is checked
   // for zero input/output price AND a chat-completions endpoint before it is shown.
-  const candidates = rows.filter(item => typeof item?.id === 'string' && (item.id.endsWith(':free') || hasZeroPricingMetadata(item))).map(item => item.id);
+  const candidates = [...new Set(rows.filter(item => typeof item?.id === 'string' && (item.id.endsWith(':free') || hasZeroPricingMetadata(item))).map(item => item.id))];
   if (!candidates.length) return [];
 
   // Fetch the public status page and model detail pages concurrently.
