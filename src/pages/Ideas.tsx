@@ -37,11 +37,11 @@ export default function Ideas({ onTabChange }: Props) {
     try {
       const result = await generateIdeas({ idea: idea.trim(), language: lang, tone, count });
       if (result.provider === 'none') {
-        setError('⚠️ Belum ada API key aktif.\nBuka tab Settings → pilih provider → input key → klik Simpan & Aktifkan.');
+        setError('Silakan login di Koneksi & Pengaturan dan pastikan XINGCHI_API_KEY sudah diatur di Netlify.');
       } else if (result.provider === 'error') {
-        setError('❌ Connection error — cek koneksi internet, API key valid, atau rate limit.\nMistral: 1 req/detik. Coba ganti model/provider lain.');
+        setError('Koneksi AI gagal. Periksa sesi login dan konfigurasi Xingchi di Netlify.');
       } else if (result.ideas.length === 0) {
-        setError('Gagal generate ide. Model return empty. Coba ganti model/provider.');
+        setError('Xingchi tidak mengembalikan ide. Coba lagi atau periksa konfigurasi model.');
       }
       setIdeas(result.ideas);
     } catch (e: any) {
@@ -164,7 +164,7 @@ export default function Ideas({ onTabChange }: Props) {
             {selected.size > 0 && (
               <div className="flex gap-2">
                 <span className="text-xs text-[#666680] self-center">{selected.size} dipilih</span>
-                <button onClick={handlePostSelected} className="btn-accent text-xs py-1.5 px-3">🐦 Simpan {selected.size} tweet</button>
+                <button onClick={handlePostSelected} className="btn-accent text-xs py-1.5 px-3">🐦 Post {selected.size} tweet</button>
               </div>
             )}
           </div>
@@ -176,7 +176,7 @@ export default function Ideas({ onTabChange }: Props) {
                   <span className="w-6 h-6 rounded-lg bg-[#6366f1]/10 flex items-center justify-center text-xs font-bold text-[#818cf8]">{item.id}</span>
                   {item.hook_type && <span className="badge badge-default text-[10px]">{item.hook_type}</span>}
                   <span className="text-xs text-[#666680]">🎨 {item.emoji_count} emoji</span>
-                  {postedIds.has(item.id) && <span className="badge badge-success text-[10px]">✅ Disimpan</span>}
+                  {postedIds.has(item.id) && <span className="badge badge-success text-[10px]">✓ Terposting</span>}
                 </div>
                 <div className="flex items-center gap-1">
                   {!postedIds.has(item.id) && (
@@ -188,7 +188,7 @@ export default function Ideas({ onTabChange }: Props) {
                     {copiedId === item.id ? '✅' : '📋'}
                   </button>
                   {!postedIds.has(item.id) && (
-                    <button onClick={() => handlePost(item)} disabled={posting === item.id} className="w-8 h-8 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center text-sm text-[#06b6d4] hover:bg-[#06b6d4]/20">
+                    <button onClick={() => handlePost(item)} disabled={posting === item.id} className="w-8 h-8 rounded-lg bg-[#06b6d4]/10 flex items-center justify-center text-sm text-[#06b6d4] hover:bg-[#06b6d4]/20" title="Publikasikan ke X">
                       {posting === item.id ? <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : '↗'}
                     </button>
                   )}
