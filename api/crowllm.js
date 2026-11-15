@@ -3,7 +3,7 @@ const CROWLLM = 'https://crowllm.com';
 
 function decodeHtml(value) {
   return value.replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, ' ')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'");
 }
 
