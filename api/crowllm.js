@@ -116,15 +116,17 @@ async function getFreeChatModels(apiKey) {
 
   // Fetch the public status page and model detail pages concurrently.
   // The suffix is only a discovery hint: page pricing and chat endpoint are still verified.
-  const statusPromise = fetchText(CROWLLM + '/status', 10000).catch(() => '');
-  const detailPagesPromise = mapWithConcurrency(candidates, 12, async id => {
+  const statusPromise = fetchText(CROWLLM + '/status', 6000).catch(() => '');
+  const detailPagesPromise = mapWithConcurrency(candidates, 32, async id => {
     // Preserve vendor/model path separators; encode each model ID segment separately.
     const pathId = id.split('/').map(encodeURIComponent).join('/');
     try {
-      return { id, html: await fetchText(CROWLLM + '/models/' + pathId, 10000) };
-    } catch {
-      // Fallback for routes that expect the entire ID as one encoded segment.
-      return { id, html: await fetchText(CROWLLM + '/models/' + encodeURIComponent(id), 10000) };
+      return { id, html: await fetchText(CROWLLM + '/models/' + pathId, 6000) };
+    } catch (error) {
+      // Only retry alternate URL encoding for a genuine 404. Retrying timeouts
+      // doubles the wait and can push the Vercel function past its execution limit.
+      if (!(error instanceof Error) || !/HTTP 404\b/.test(error.message)) throw error;
+      return { id, html: await fetchText(CROWLLM + '/models/' + encodeURIComponent(id), 4000) };
     }
   });
   const [statusHtml, detailPages] = await Promise.all([statusPromise, detailPagesPromise]);
