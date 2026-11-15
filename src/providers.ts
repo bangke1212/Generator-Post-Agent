@@ -27,6 +27,8 @@ export interface ProviderConfig {
 export const CROWLLM_FREE_MODELS: ModelConfig[] = [
   { id: 'deepseek-v4-flash-uncensored:free', name: '🆓 DeepSeek V4 Flash Uncensored', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['creative', 'deep_reasoning', 'debate'], bestFor: 'Reasoning dan opini tajam.' },
   { id: 'caw/glm-5.3-flash:free', name: '🆓 GLM 5.3 Flash', free: true, temperature: 0.85, maxTokens: 1400, strengths: ['natural_id', 'structured', 'reasoning'], bestFor: 'Post Bahasa Indonesia dan ide terstruktur.' },
+  { id: 'glm-4.7-flash:free', name: '🆓 GLM 4.7 Flash', free: true, temperature: 0.85, maxTokens: 1400, strengths: ['natural_id', 'structured', 'reasoning'], bestFor: 'Draft cepat dan penulisan umum.' },
+  { id: 'glm-4.6v-flash:free', name: '🆓 GLM 4.6V Flash', free: true, temperature: 0.82, maxTokens: 1200, strengths: ['multilingual', 'reasoning', 'vision'], bestFor: 'Analisis gambar dan penulisan multimodal.' },
   { id: 'agnes-2.5-flash:free', name: '🆓 Agnes 2.5 Flash', free: true, temperature: 0.86, maxTokens: 1400, strengths: ['creative', 'natural_id', 'fast'], bestFor: 'Draft cepat dan konten kreatif.' },
   { id: 'laguna-s-2-1:free', name: '🆓 Laguna S 2.1', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['reasoning', 'structured', 'technical'], bestFor: 'Konten analitis dan terstruktur.' },
 ];
