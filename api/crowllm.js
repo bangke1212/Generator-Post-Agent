@@ -132,8 +132,8 @@ async function getFreeChatModels(apiKey) {
   const verified = detailPages.filter(Boolean).map(({ id, html: detailHtml }) => {
     const detailText = htmlText(detailHtml);
     // CrowLLM model pages label the endpoint as 'Endpoints chat'; do not require the URL sample to be present.
-    const endpointLabel = detailText.match(/Endpoints\\s+([a-z0-9,\\s-]{1,120})/i)?.[1] || '';
-    const hasChatEndpoint = /\\/v1\\/chat\\/completions/i.test(detailHtml) || /(?:^|\\b)chat(?:\\b|$)/i.test(endpointLabel);
+    const endpointLabel = detailText.match(/Endpoints\s+([a-z0-9,\s-]{1,120})/i)?.[1] || '';
+    const hasChatEndpoint = /\/v1\/chat\/completions/i.test(detailHtml) || /(?:^|\b)chat(?:\b|$)/i.test(endpointLabel);
     const explicitlyFree = zeroPrice(detailText, 'Input') && zeroPrice(detailText, 'Output');
     if (!explicitlyFree || !hasChatEndpoint) return null;
 
