@@ -92,7 +92,7 @@ export default function Generate({ onTabChange }: Props) {
           <div className="flex items-center gap-2">
             <span className="badge badge-info text-[10px]">{result.topic}</span>
             {result.provider && <span className="text-[10px] text-[#666680]">via {result.provider}</span>}
-            <span className="ml-auto text-xs text-[#666680]">~{result.content.split(/\s+/).length} kata</span>
+            <span className="ml-auto text-xs text-[#666680]">{result.content.length}/280 karakter</span>
           </div>
           <div className="bg-[#0d0d25] rounded-2xl p-5 border border-[#1e1e4a] relative group">
             <p className="text-sm leading-[1.8] whitespace-pre-wrap text-[#d4d4e8]">{result.content}</p>
