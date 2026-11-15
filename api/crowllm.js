@@ -154,11 +154,16 @@ async function getFreeChatModels(apiKey) {
   }
 
   const rows = Array.isArray(payload?.data) ? payload.data : [];
-  const ids = [...new Set(rows.map(item => item?.id).filter(id => typeof id === 'string' && id.trim()))];
+  const rowsById = new Map(rows
+    .filter(item => typeof item?.id === 'string' && item.id.trim())
+    .map(item => [item.id, item]));
+  const ids = [...rowsById.keys()];
   if (!ids.length) return { models: [], partial: false, checkedCandidates: 0, totalCandidates: 0, timedOutModelPages: 0 };
 
-  // :free is only a discovery hint. Each candidate's official model page is checked
-  // for zero input/output price AND a chat-completions endpoint before it is shown.
+  // CrowLLM's OpenAI-compatible catalogue is the authenticated source of truth for
+  // key-visible models. The :free suffix is the provider's free-tier marker. Do not
+  // make the web model pages a hard dependency: they are protected by Cloudflare
+  // and are not required to call /v1/chat/completions.
   const allCandidates = [...new Set(rows.filter(item => typeof item?.id === 'string' && (item.id.endsWith(':free') || hasZeroPricingMetadata(item))).map(item => item.id))];
   const available = new Set(allCandidates);
   const orderedCandidates = [
@@ -180,12 +185,20 @@ async function getFreeChatModels(apiKey) {
   const detailPages = [...curatedPages, ...extraPages];
   const timedOutModelPages = detailPages.filter(page => page?.timedOut).length;
 
-  const verified = detailPages.filter(page => page && !page.timedOut).map(({ id, html: detailHtml }) => {
+  const verified = candidates.map(id => {
+    const row = rowsById.get(id) || {};
+    const page = detailPages.find(item => item?.id === id);
+    const detailHtml = page && !page.timedOut ? page.html : '';
     const detailText = htmlText(detailHtml);
-    // CrowLLM model pages label the endpoint as 'Endpoints chat'; do not require the URL sample to be present.
+    const endpointTypes = Array.isArray(row.supported_endpoint_types) ? row.supported_endpoint_types : [];
+    const hasOpenAIEndpoint = endpointTypes.some(type => /openai|chat/i.test(String(type)));
     const endpointLabel = detailText.match(/Endpoints\s+([a-z0-9,\s-]{1,120})/i)?.[1] || '';
-    const hasChatEndpoint = /\/v1\/chat\/completions/i.test(detailHtml) || /(?:^|\b)chat(?:\b|$)/i.test(endpointLabel);
-    const explicitlyFree = zeroPrice(detailText, 'Input') && zeroPrice(detailText, 'Output');
+    const hasChatEndpoint = hasOpenAIEndpoint
+      || /\/v1\/chat\/completions/i.test(detailHtml)
+      || /(?:^|\b)chat(?:\b|$)/i.test(endpointLabel);
+    const explicitlyFree = id.endsWith(':free')
+      || hasZeroPricingMetadata(row)
+      || (detailText && zeroPrice(detailText, 'Input') && zeroPrice(detailText, 'Output'));
     if (!explicitlyFree || !hasChatEndpoint) return null;
 
     // Prefer the live status page. Fall back to the official model detail page
