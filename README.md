@@ -55,21 +55,16 @@ npm run build
 
 ### CrowLLM Free Models
 
-CrowLLM uses the OpenAI-compatible base URL `https://crowllm.com/v1`. Add your CrowLLM key in **API Providers → CrowLLM**.
+CrowLLM uses the OpenAI-compatible base URL `https://crowllm.com/v1`. Add your CrowLLM key in **API Providers → CrowLLM**, then click **Sinkronkan model free**.
 
-The app includes a curated free chat-model list:
-- `deepseek-v4-flash-uncensored:free`
-- `caw/glm-5.3-flash:free`
-- `glm-4.7-flash:free`
-- `glm-4.6v-flash:free`
-- `agnes-2.5-flash:free`
-- `laguna-s-2-1:free`
+The app retrieves the account-visible IDs directly from `GET /v1/models`. The `:free` suffix is used only to identify candidates, not as proof that a model is suitable: the Vercel proxy checks each candidate's official CrowLLM model page and includes it only when both input/output prices are zero and the page exposes the `/v1/chat/completions` endpoint. Embedding, reranking, speech, and other non-chat models are excluded. The selected model ID is the exact ID returned by CrowLLM.
 
-Use **Sinkronkan model free** in Settings to retrieve `GET /v1/models` through the same-origin Vercel function (`/api/crowllm`) and intersect the catalogue with models available to your key. Chat completions also go through this backend proxy, avoiding browser CORS failures against CrowLLM. The proxy forwards requests to CrowLLM and does not log API keys. The list is intentionally limited to chat models; embedding, reranking, and text-to-speech models are not valid choices for post generation.
+For each verified chat model, Settings also displays its 24-hour success rate and average latency using CrowLLM's live [status page](https://crowllm.com/status), with the model detail page as a fallback when the status table has no row. Models are sorted with healthier, faster models first. "No data" means CrowLLM did not publish a usable metric for that model; it is not a claim that the model is offline.
 
-**Deployment note:** Redeploy the latest `main` branch on Vercel so the `/api/crowllm` serverless function is available. The browser sends the key to your own Vercel deployment, which then forwards it to CrowLLM over HTTPS; keep the Vercel project and browser session trusted.
+Model discovery and chat completions both go through the same-origin Vercel function (`/api/crowllm`) to avoid browser CORS failures. The proxy forwards requests to CrowLLM and does not log API keys.
 
-**Availability note:** Free status, upstream capacity, account eligibility, and rate limits can change. Check the [CrowLLM live status](https://crowllm.com/status) and each [model page](https://crowllm.com/models) before relying on a model. A model being listed does not guarantee that it is currently serving requests.
+**Deployment note:** Redeploy the latest `main` branch on Vercel so the updated `/api/crowllm` serverless function is available. The browser sends the key to your own Vercel deployment, which forwards it to CrowLLM over HTTPS; keep the Vercel project and browser session trusted.
+
 
 ## 📁 Project Structure
 
