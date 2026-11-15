@@ -1,0 +1,2 @@
+const json=(body:unknown)=>new Response(JSON.stringify(body),{headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
+export default async()=>json({aiConfigured:Boolean(Netlify.env.get('XINGCHI_API_KEY')),xConfigured:Boolean(Netlify.env.get('X_USER_ACCESS_TOKEN')),model:Netlify.env.get('XINGCHI_MODEL')||'gpt-6.1-sol',baseUrl:Netlify.env.get('XINGCHI_BASE_URL')||'https://api.xingchiapi.com/v1'});
