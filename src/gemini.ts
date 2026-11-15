@@ -163,10 +163,10 @@ function getPerModelConstraints(provider: string, model: string): string {
   if (!profile) return '';
   const constraints: string[] = [];
   if (profile.maxTokens <= 500) {
-    constraints.push('⚠️ Kamu model compact: tweet 120-150 kata saja. Langsung to the point dan padat.');
+    constraints.push('⚠️ Buat satu post X yang ringkas: maksimal 220 karakter, langsung to the point.');
   }
   if (profile.maxTokens >= 800) {
-    constraints.push('✅ Kamu model besar: boleh elaborate. Target 120-150 kata.');
+    constraints.push('✅ Tetap buat satu post X ringkas: maksimal 220 karakter, bukan thread.');
   }
   return constraints.length ? `\n🔧 MODEL CONSTRAINTS:\n${constraints.join('\n')}\n` : '';
 }
@@ -207,7 +207,7 @@ ${ALGO_ANTI_PENALTY}
 - EMOJI sebagai karakter pertama (wajib)
 - 2-3 paragraf pendek
 - Tiap paragraf diawali emoji yang nyambung
-- TARGET PANJANG: 120-150 kata total
+- TARGET PANJANG: 180-220 karakter (maksimal 220 karakter, termasuk spasi dan emoji)
 - Akhiri dengan REPLY BAIT natural
 - Personal voice: "gue/aku" (atau "I" untuk English)
 
@@ -290,14 +290,14 @@ ${ALGO_ANTI_PENALTY}
 (dan seterusnya)
 
 ⚠️ SETIAP TWEET HARUS:
-- 120-150 kata (padat, berbobot)
+- 180-220 karakter per tweet (maksimal 220 karakter agar aman untuk X)
 - Hook berbeda (random dari 8 hook types)
 - Emoji emosi yang match (ikut EMOJI QUALITY GUIDE)
 - Personal voice: "gue/aku" atau "I" untuk English
 - Akhiri reply bait natural
 - TIDAK BOLEH ada kalimat generik, klise, atau template
 - TIDAK BOLEH pakai frasa formal/akademik
-- JANGAN kurang dari 120 kata atau lebih dari 150 kata
+- JANGAN melebihi 220 karakter per tweet
 
 TULIS ${maxCount} TWEET:`;
 
