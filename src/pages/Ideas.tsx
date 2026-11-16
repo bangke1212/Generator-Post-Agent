@@ -18,6 +18,7 @@ export default function Ideas({ onTabChange }: Props) {
   const [idea, setIdea] = useState('');
   const [imageData, setImageData] = useState('');
   const [imageName, setImageName] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [tone, setTone] = useState('supportif');
   const [lang, setLang] = useState('id');
   const [count, setCount] = useState(5);
@@ -57,15 +58,26 @@ export default function Ideas({ onTabChange }: Props) {
     setImageName('');
   };
 
+  const hasMedia = Boolean(imageData || videoUrl.trim());
+
   const handleGenerate = async () => {
-    if (!idea.trim() && !imageData) return;
+    if (!idea.trim() && !hasMedia) return;
+    if (videoUrl.trim()) {
+      try {
+        const parsed = new URL(videoUrl.trim());
+        if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+      } catch {
+        setError('Masukkan URL video yang valid dengan awalan https://');
+        return;
+      }
+    }
     setLoading(true);
     setError('');
     setIdeas([]);
     setSelected(new Set());
     setPostedIds(new Set());
     try {
-      const result = await generateIdeas({ idea: idea.trim(), imageData, language: lang, tone, count });
+      const result = await generateIdeas({ idea: idea.trim(), imageData, videoUrl: videoUrl.trim(), language: lang, tone, count });
       if (result.provider === 'none') {
         setError('⚠️ Belum ada API key aktif.\nBuka tab Settings → pilih provider → input key → klik Simpan & Aktifkan.');
       } else if (result.provider === 'error') {
@@ -82,7 +94,7 @@ export default function Ideas({ onTabChange }: Props) {
   const handlePost = (item: GeneratedIdea) => {
     setPosting(item.id);
     try {
-      insertPost({ content: item.content, topic: idea.trim() || imageName || 'Ide dari gambar', emoji_count: item.emoji_count });
+      insertPost({ content: item.content, topic: idea.trim() || imageName || videoUrl.trim() || 'Ide dari media', emoji_count: item.emoji_count });
       postedIds.add(item.id);
       setPostedIds(new Set(postedIds));
     } catch (e: any) {
@@ -94,7 +106,7 @@ export default function Ideas({ onTabChange }: Props) {
     const sel = ideas.filter(i => selected.has(i.id) && !postedIds.has(i.id));
     for (const item of sel) {
       setPosting(item.id);
-      insertPost({ content: item.content, topic: idea.trim() || imageName || 'Ide dari gambar', emoji_count: item.emoji_count });
+      insertPost({ content: item.content, topic: idea.trim() || imageName || videoUrl.trim() || 'Ide dari media', emoji_count: item.emoji_count });
       postedIds.add(item.id);
       setPostedIds(new Set(postedIds));
       await new Promise(r => setTimeout(r, 500));
@@ -135,7 +147,7 @@ export default function Ideas({ onTabChange }: Props) {
               onKeyDown={e => e.key === 'Enter' && handleGenerate()}
               placeholder="Contoh: quantum computing, AI ethics, remote work..."
               className="input text-base py-4 pl-4 pr-12" />
-            <button onClick={handleGenerate} disabled={loading || (!idea.trim() && !imageData)}
+            <button onClick={handleGenerate} disabled={loading || (!idea.trim() && !hasMedia)}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#4f46e5] flex items-center justify-center text-lg text-white transition-all hover:scale-105 disabled:opacity-30 shadow-lg shadow-[#6366f1]/20">
               {loading ? <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : '→'}
             </button>
@@ -153,6 +165,18 @@ export default function Ideas({ onTabChange }: Props) {
               </div>
             )}
             <span className="text-[11px] text-[#666680]">Model vision akan membaca gambar untuk menyesuaikan ide posting.</span>
+          </div>
+          <div className="mt-3">
+            <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2 block">🎬 Link video media sosial</label>
+            <input
+              type="url"
+              value={videoUrl}
+              onChange={e => setVideoUrl(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleGenerate()}
+              placeholder="YouTube, TikTok, Instagram, Facebook, X, atau link video publik lainnya"
+              className="input text-sm"
+            />
+            <p className="text-[11px] text-[#666680] mt-1.5">Gunakan link publik yang bisa diakses model. Link privat, login, atau video yang diblokir platform mungkin tidak dapat dibaca.</p>
           </div>
         </div>
 

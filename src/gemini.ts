@@ -254,8 +254,8 @@ HOOK: rant atau roast observation.
 REPLY BAIT: "Relate angkat tangan 💀", "Yang ngerasa kena, sini ngaku 👇"`,
 };
 
-export async function generateIdeas(opts: { idea: string; imageData?: string; language?: string; tone?: string; count?: number }) {
-  const { idea, imageData = '', language = 'id', tone = 'supportif', count = 5 } = opts;
+export async function generateIdeas(opts: { idea: string; imageData?: string; videoUrl?: string; language?: string; tone?: string; count?: number }) {
+  const { idea, imageData = '', videoUrl = '', language = 'id', tone = 'supportif', count = 5 } = opts;
   const key = getActiveApiKey();
   if (!key) return { ideas: [] as GeneratedIdea[], provider: 'none' };
 
@@ -272,6 +272,7 @@ export async function generateIdeas(opts: { idea: string; imageData?: string; la
 🌍 BAHASA: ${langName}
   📌 IDE: "${idea || '(analisis gambar)'}"
 ${imageData ? '\n📷 GAMBAR TERLAMPIR: Analisis gambar yang dikirim bersama prompt. Gunakan objek, suasana, warna, aktivitas, dan konteks visualnya sebagai dasar ide. Jangan mengarang detail yang tidak terlihat.' : ''}
+${videoUrl ? `\n🎬 VIDEO TERLAMPIR: Baca dan analisis isi video dari URL yang dikirim bersama prompt. Perhatikan adegan, ucapan, teks layar, audio, emosi, dan konteks sebelum menulis tanggapan. Jangan mengarang detail yang tidak terlihat atau terdengar.` : ''}
 
 ${TONE_INSTRUCTION[tone] || ''}
 
@@ -309,6 +310,7 @@ TULIS ${maxCount} TWEET:`;
       model: key.model,
       prompt,
       imageData,
+      videoUrl,
       maxTokens: optimal.maxTokens * 2,
       temperature: optimal.temperature,
     });

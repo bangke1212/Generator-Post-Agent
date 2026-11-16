@@ -188,6 +188,7 @@ export interface GenerateParams {
   model: string;
   prompt: string;
   imageData?: string;
+  videoUrl?: string;
   maxTokens?: number;
   temperature?: number;
 }
@@ -213,7 +214,7 @@ export function getModelProfile(provider: string, model: string): ModelConfig | 
 }
 
 export async function callAI(params: GenerateParams): Promise<{ content: string; provider: string; model: string }> {
-  const { provider, apiKey, baseUrl, model, prompt, imageData, maxTokens, temperature } = params;
+  const { provider, apiKey, baseUrl, model, prompt, imageData, videoUrl, maxTokens, temperature } = params;
 
   const preset = PROVIDER_PRESETS[provider];
   if (!preset) throw new Error('Provider ' + provider + ' tidak dikenal');
@@ -236,6 +237,7 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
           model,
           prompt,
           imageData,
+          videoUrl,
           maxTokens: maxTokens || optimal.maxTokens,
           temperature: temperature ?? optimal.temperature,
         }),
@@ -304,9 +306,10 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     dangerouslyAllowBrowser: true,
   });
 
-  const messageContent: any = imageData
+  const messageContent: any = imageData || videoUrl
     ? [
-        { type: 'image_url', image_url: { url: imageData } },
+        ...(imageData ? [{ type: 'image_url', image_url: { url: imageData } }] : []),
+        ...(videoUrl ? [{ type: 'video_url', video_url: { url: videoUrl } }] : []),
         { type: 'text', text: prompt },
       ]
     : prompt;
