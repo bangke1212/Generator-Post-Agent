@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: { message: 'Method not allowed' } });
   }
 
-  const { apiKey, model, prompt, imageData, videoUrl, maxTokens, temperature } = req.body || {};
+  const { apiKey, model, prompt, imageData, videoUrl, mediaType, maxTokens, temperature } = req.body || {};
   if (typeof apiKey !== 'string' || !apiKey.trim()) {
     return res.status(400).json({ error: { message: 'API Key Xingchi belum diisi.' } });
   }
@@ -26,7 +26,9 @@ export default async function handler(req, res) {
           content: (typeof imageData === 'string' && imageData.startsWith('data:image/')) || (typeof videoUrl === 'string' && /^https?:\/\//i.test(videoUrl))
             ? [
                 ...(typeof imageData === 'string' && imageData.startsWith('data:image/') ? [{ type: 'image_url', image_url: { url: imageData } }] : []),
-                ...(typeof videoUrl === 'string' && /^https?:\/\//i.test(videoUrl) ? [{ type: 'video_url', video_url: { url: videoUrl } }] : []),
+                ...(typeof videoUrl === 'string' && /^https?:\/\//i.test(videoUrl)
+                  ? [mediaType === 'image' ? { type: 'image_url', image_url: { url: videoUrl } } : { type: 'video_url', video_url: { url: videoUrl } }]
+                  : []),
                 { type: 'text', text: String(prompt || 'Analisis media ini dan jawab dengan ringkas.') },
               ]
             : String(prompt || 'Test koneksi — reply dengan OK saja'),

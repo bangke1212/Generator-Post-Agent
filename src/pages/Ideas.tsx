@@ -67,7 +67,7 @@ export default function Ideas({ onTabChange }: Props) {
         const parsed = new URL(videoUrl.trim());
         if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
       } catch {
-        setError('Masukkan URL video yang valid dengan awalan https://');
+        setError('Masukkan URL media sosial yang valid dengan awalan https://');
         return;
       }
     }
@@ -80,8 +80,8 @@ export default function Ideas({ onTabChange }: Props) {
       const result = await generateIdeas({ idea: idea.trim(), imageData, videoUrl: videoUrl.trim(), language: lang, tone, count });
       if (result.provider === 'none') {
         setError('⚠️ Belum ada API key aktif.\nBuka tab Settings → pilih provider → input key → klik Simpan & Aktifkan.');
-      } else if (result.provider === 'error') {
-        setError('❌ Connection error — cek koneksi internet, API key valid, atau rate limit.\nMistral: 1 req/detik. Coba ganti model/provider lain.');
+      } else if (result.error) {
+        setError(`❌ ${result.provider}${result.model ? ` · ${result.model}` : ''}\n${result.error}`);
       } else if (result.ideas.length === 0) {
         setError('Gagal generate ide. Model return empty. Coba ganti model/provider.');
       }
@@ -167,16 +167,16 @@ export default function Ideas({ onTabChange }: Props) {
             <span className="text-[11px] text-[#666680]">Model vision akan membaca gambar untuk menyesuaikan ide posting.</span>
           </div>
           <div className="mt-3">
-            <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2 block">🎬 Link video media sosial</label>
+            <label className="text-[11px] font-semibold text-[#9494b8] uppercase tracking-wider mb-2 block">🎬 Link media sosial</label>
             <input
               type="url"
               value={videoUrl}
               onChange={e => setVideoUrl(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-              placeholder="YouTube, TikTok, Instagram, Facebook, X, atau link video publik lainnya"
+              placeholder="YouTube, TikTok, Instagram, Facebook, X, atau link media publik lainnya"
               className="input text-sm"
             />
-            <p className="text-[11px] text-[#666680] mt-1.5">Gunakan link publik yang bisa diakses model. Link privat, login, atau video yang diblokir platform mungkin tidak dapat dibaca.</p>
+            <p className="text-[11px] text-[#666680] mt-1.5">Gunakan link publik yang bisa diakses model. Foto X dan video publik dideteksi otomatis; link privat atau login mungkin tidak dapat dibaca.</p>
           </div>
         </div>
 

@@ -274,7 +274,7 @@ REPLY BAIT: "Relate angkat tangan 💀", "Yang ngerasa kena, sini ngaku 👇"`,
 export async function generateIdeas(opts: { idea: string; imageData?: string; videoUrl?: string; language?: string; tone?: string; count?: number }) {
   const { idea, imageData = '', videoUrl = '', language = 'id', tone = 'supportif', count = 5 } = opts;
   const key = getActiveApiKey();
-  if (!key) return { ideas: [] as GeneratedIdea[], provider: 'none' };
+  if (!key) return { ideas: [] as GeneratedIdea[], provider: 'none', model: '' };
 
   const normalizedLanguage = language === 'en' ? 'en' : 'id';
   const langName = normalizedLanguage === 'en' ? 'English' : 'Indonesia';
@@ -289,11 +289,11 @@ export async function generateIdeas(opts: { idea: string; imageData?: string; vi
 🌍 BAHASA: ${langName}
   📌 IDE: "${idea || '(analisis gambar)'}"
 ${imageData ? '\n📷 GAMBAR TERLAMPIR: Analisis gambar yang dikirim bersama prompt. Gunakan objek, suasana, warna, aktivitas, dan konteks visualnya sebagai dasar ide. Jangan mengarang detail yang tidak terlihat.' : ''}
-${videoUrl ? `\n🎬 VIDEO TERLAMPIR: Baca dan analisis isi video dari URL yang dikirim bersama prompt. Perhatikan adegan, ucapan, teks layar, audio, emosi, dan konteks sebelum menulis tanggapan. Jangan mengarang detail yang tidak terlihat atau terdengar.` : ''}
+${videoUrl ? `\n🎬 MEDIA TERLAMPIR: Baca dan analisis media dari URL yang dikirim bersama prompt. Jika berupa foto, perhatikan objek, ekspresi, teks, suasana, dan konteks visual. Jika berupa video, perhatikan adegan, ucapan, teks layar, audio, emosi, dan konteks. Jangan mengarang detail yang tidak terlihat atau terdengar.` : ''}
 
 ${TONE_INSTRUCTION[tone] || ''}
 
-${videoUrl ? `🎯 MODE BALASAN LANGSUNG KE VIDEO:
+${videoUrl ? `🎯 MODE BALASAN LANGSUNG KE MEDIA:
 - Tulis sebagai komentar/reply langsung untuk posting asli, bukan artikel atau renungan.
 - Kalimat pertama WAJIB menjadi hook/reaksi spontan terhadap momen paling lucu, mengejutkan, absurd, atau menarik yang benar-benar terlihat/terdengar.
 - Gunakan 1-3 kalimat pendek, sekitar 20-60 kata per variasi.
@@ -363,9 +363,10 @@ TULIS ${maxCount} TWEET:`;
       hook_type: hookTypes[i % hookTypes.length],
     }));
 
-    return { ideas, provider: key.provider };
+    return { ideas, provider: key.provider, model: key.model };
   } catch (e: any) {
-    return { ideas: [] as GeneratedIdea[], provider: 'error' };
+    const message = e instanceof Error ? e.message : String(e || 'Kesalahan provider tidak diketahui');
+    return { ideas: [] as GeneratedIdea[], provider: key.provider, model: key.model, error: message };
   }
 }
 

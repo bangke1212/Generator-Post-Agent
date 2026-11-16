@@ -125,25 +125,28 @@ async function mapWithConcurrency(items, limit, mapper) {
 
 async function resolveXVideo(url) {
   let parsed;
-  try { parsed = new URL(url); } catch { return { url, text: '' }; }
-  if (!/(?:^|\.)x\.com$|(?:^|\.)twitter\.com$/i.test(parsed.hostname)) return { url, text: '' };
+  try { parsed = new URL(url); } catch { return { url, text: '', type: 'video' }; }
+  if (!/(?:^|\.)x\.com$|(?:^|\.)twitter\.com$/i.test(parsed.hostname)) return { url, text: '', type: 'video' };
   const match = parsed.pathname.match(/\/status\/(\d+)/i);
-  if (!match) return { url, text: '' };
+  if (!match) return { url, text: '', type: 'video' };
   try {
     const response = await fetch('https://api.fxtwitter.com/status/' + match[1], {
       signal: AbortSignal.timeout(7000),
       headers: { 'User-Agent': 'Generator-Post-Agent/1.0' },
       cache: 'no-store',
     });
-    if (!response.ok) return { url, text: '' };
+    if (!response.ok) return { url, text: '', type: 'video' };
     const payload = await response.json();
     const tweet = payload?.tweet;
     const videos = Array.isArray(tweet?.media?.videos) ? tweet.media.videos : [];
     const mp4 = videos.find(item => typeof item?.url === 'string' && /\.mp4(?:\?|$)/i.test(item.url))?.url
       || videos.find(item => typeof item?.url === 'string')?.url;
-    return { url: mp4 || url, text: typeof tweet?.text === 'string' ? tweet.text : '' };
+    if (mp4) return { url: mp4, text: typeof tweet?.text === 'string' ? tweet.text : '', type: 'video' };
+    const photo = Array.isArray(tweet?.media?.photos) ? tweet.media.photos.find(item => typeof item?.url === 'string')?.url : '';
+    if (photo) return { url: photo, text: typeof tweet?.text === 'string' ? tweet.text : '', type: 'image' };
+    return { url: '', text: typeof tweet?.text === 'string' ? tweet.text : '', type: 'video' };
   } catch {
-    return { url, text: '' };
+    return { url, text: '', type: 'video' };
   }
 }
 
@@ -266,14 +269,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: { message: 'Method not allowed' } });
   }
 
-  const { action, apiKey, model, prompt, imageData, videoUrl, maxTokens, temperature } = req.body || {};
+  const { action, apiKey, model, prompt, imageData, videoUrl, mediaType, maxTokens, temperature } = req.body || {};
   if (action === 'resolve_video') {
     if (typeof videoUrl !== 'string' || !/^https?:\/\//i.test(videoUrl)) {
       return res.status(400).json({ error: { message: 'URL video tidak valid.' } });
     }
     const resolved = await resolveXVideo(videoUrl);
     res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ videoUrl: resolved.url, text: resolved.text });
+    return res.status(200).json({ mediaUrl: resolved.url, mediaType: resolved.type, text: resolved.text });
   }
   if (typeof apiKey !== 'string' || !apiKey.trim()) {
     return res.status(400).json({ error: { message: 'API Key CrowLLM belum diisi.' } });
@@ -310,8 +313,8 @@ export default async function handler(req, res) {
 
   try {
     const resolvedMedia = typeof videoUrl === 'string' && /^https?:\/\//i.test(videoUrl)
-      ? await resolveXVideo(videoUrl)
-      : { url: videoUrl, text: '' };
+      ? { ...(await resolveXVideo(videoUrl)), ...(mediaType === 'image' ? { type: 'image' } : {}) }
+      : { url: videoUrl, text: '', type: 'video' };
     const resolvedPrompt = resolvedMedia.text
       ? `${String(prompt || 'Analisis video ini dan jawab dengan ringkas.')}\n\nKONTEKS TEKS POST X: ${resolvedMedia.text}`
       : String(prompt || 'Test koneksi — reply dengan OK saja');
@@ -328,7 +331,9 @@ export default async function handler(req, res) {
           content: (typeof imageData === 'string' && imageData.startsWith('data:image/')) || (typeof resolvedMedia.url === 'string' && /^https?:\/\//i.test(resolvedMedia.url))
             ? [
                 ...(typeof imageData === 'string' && imageData.startsWith('data:image/') ? [{ type: 'image_url', image_url: { url: imageData } }] : []),
-                ...(typeof resolvedMedia.url === 'string' && /^https?:\/\//i.test(resolvedMedia.url) ? [{ type: 'video_url', video_url: { url: resolvedMedia.url } }] : []),
+                ...(typeof resolvedMedia.url === 'string' && /^https?:\/\//i.test(resolvedMedia.url)
+                  ? [resolvedMedia.type === 'image' ? { type: 'image_url', image_url: { url: resolvedMedia.url } } : { type: 'video_url', video_url: { url: resolvedMedia.url } }]
+                  : []),
                 { type: 'text', text: resolvedPrompt },
               ]
             : resolvedPrompt,

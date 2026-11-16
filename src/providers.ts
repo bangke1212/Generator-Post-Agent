@@ -216,7 +216,7 @@ export function getModelProfile(provider: string, model: string): ModelConfig | 
   return preset.models.find(x => x.id === model) || null;
 }
 
-async function resolveVideoForProvider(videoUrl: string, prompt: string): Promise<{ videoUrl: string; prompt: string }> {
+async function resolveVideoForProvider(videoUrl: string, prompt: string): Promise<{ mediaUrl: string; mediaType: 'image' | 'video'; prompt: string }> {
   try {
     const response = await fetch('/api/crowllm', {
       method: 'POST',
@@ -225,13 +225,14 @@ async function resolveVideoForProvider(videoUrl: string, prompt: string): Promis
     });
     const payload = await response.json().catch(() => ({}));
     return {
-      videoUrl: typeof payload?.videoUrl === 'string' && payload.videoUrl ? payload.videoUrl : videoUrl,
+      mediaUrl: typeof payload?.mediaUrl === 'string' && payload.mediaUrl ? payload.mediaUrl : videoUrl,
+      mediaType: payload?.mediaType === 'image' ? 'image' : 'video',
       prompt: typeof payload?.text === 'string' && payload.text.trim()
         ? `${prompt}\n\nKONTEKS TEKS POST X: ${payload.text}`
         : prompt,
     };
   } catch {
-    return { videoUrl, prompt };
+    return { mediaUrl: videoUrl, mediaType: 'video', prompt };
   }
 }
 
@@ -245,7 +246,7 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
   if (!endpoint) throw new Error('Base URL tidak diatur untuk ' + provider);
 
   const optimal = getModelParams(provider, model);
-  const resolved = videoUrl ? await resolveVideoForProvider(videoUrl, prompt) : { videoUrl: '', prompt };
+  const resolved = videoUrl ? await resolveVideoForProvider(videoUrl, prompt) : { mediaUrl: '', mediaType: 'video' as const, prompt };
 
   // CrowLLM is called through a same-origin Vercel function to avoid browser CORS failures.
   if (provider === 'crowllm') {
@@ -260,7 +261,8 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
           model,
           prompt: resolved.prompt,
           imageData,
-          videoUrl: resolved.videoUrl,
+          videoUrl: resolved.mediaUrl,
+          mediaType: resolved.mediaType,
           maxTokens: maxTokens || optimal.maxTokens,
           temperature: temperature ?? optimal.temperature,
         }),
@@ -297,7 +299,8 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
           apiKey,
           model,
           prompt: resolved.prompt,
-          videoUrl: resolved.videoUrl,
+          videoUrl: resolved.mediaUrl,
+          mediaType: resolved.mediaType,
           maxTokens: maxTokens || optimal.maxTokens,
           temperature: temperature ?? optimal.temperature,
         }),
@@ -330,10 +333,10 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     dangerouslyAllowBrowser: true,
   });
 
-  const messageContent: any = imageData || resolved.videoUrl
+  const messageContent: any = imageData || resolved.mediaUrl
     ? [
         ...(imageData ? [{ type: 'image_url', image_url: { url: imageData } }] : []),
-        ...(resolved.videoUrl ? [{ type: 'video_url', video_url: { url: resolved.videoUrl } }] : []),
+        ...(resolved.mediaUrl ? [resolved.mediaType === 'image' ? { type: 'image_url', image_url: { url: resolved.mediaUrl } } : { type: 'video_url', video_url: { url: resolved.mediaUrl } }] : []),
         { type: 'text', text: resolved.prompt },
       ]
     : resolved.prompt;
