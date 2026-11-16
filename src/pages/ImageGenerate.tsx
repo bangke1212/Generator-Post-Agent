@@ -3,6 +3,7 @@ import { getAllApiKeys } from '../store';
 
 interface Props { onTabChange: (tab: string) => void; }
 interface ImageModel { id: string; name?: string; free?: boolean; }
+const PROMPT_MODEL_IDS = ['deepseek-v4-flash-uncensored:free', 'deepseek-v4.1-flash-uncensored:free'];
 
 async function crowllmRequest(body: Record<string, unknown>) {
   const response = await fetch('/api/crowllm', {
@@ -22,6 +23,9 @@ export default function ImageGenerate({ onTabChange }: Props) {
   const [apiKey, setApiKey] = useState('');
   const [models, setModels] = useState<ImageModel[]>([]);
   const [model, setModel] = useState('');
+  const [promptModels, setPromptModels] = useState<ImageModel[]>([]);
+  const [promptModel, setPromptModel] = useState('');
+  const [enhancing, setEnhancing] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState('1024x1024');
   const [loadingModels, setLoadingModels] = useState(false);
@@ -44,8 +48,17 @@ export default function ImageGenerate({ onTabChange }: Props) {
     setLoadingModels(true);
     setError('');
     try {
-      const catalog = await crowllmRequest({ action: 'image_models', apiKey });
+      const [catalog, chatCatalog] = await Promise.all([
+        crowllmRequest({ action: 'image_models', apiKey }),
+        crowllmRequest({ action: 'models', apiKey }),
+      ]);
       const available = Array.isArray(catalog.models) ? catalog.models : [];
+      const chatModels = Array.isArray(chatCatalog.models) ? chatCatalog.models : [];
+      const availablePromptModels = PROMPT_MODEL_IDS
+        .filter(id => chatModels.some((item: ImageModel) => item.id === id))
+        .map(id => ({ id, name: id, free: true }));
+      setPromptModels(availablePromptModels);
+      setPromptModel(current => availablePromptModels.some((item: ImageModel) => item.id === current) ? current : (availablePromptModels[0]?.id || ''));
       setModels(available);
       setModel(current => available.some((item: ImageModel) => item.id === current) ? current : (available[0]?.id || ''));
       if (!available.length) setError('Tidak ada model dengan endpoint image generation yang terdeteksi pada katalog API key ini. Pastikan akun CrowLLM memiliki akses ke model Text-to-Image.');
@@ -60,6 +73,23 @@ export default function ImageGenerate({ onTabChange }: Props) {
     if (apiKey) void loadModels();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
+
+  const enhancePrompt = async () => {
+    if (!apiKey) { setError('API Key CrowLLM belum tersimpan. Buka AI Providers terlebih dahulu.'); return; }
+    if (!promptModel) { setError('Tidak ada model DeepSeek prompt yang terdeteksi tersedia di katalog chat CrowLLM.'); return; }
+    if (!prompt.trim()) { setError('Tulis ide gambar terlebih dahulu.'); return; }
+    setEnhancing(true);
+    setError('');
+    try {
+      const result = await crowllmRequest({ action: 'enhance_image_prompt', apiKey, model: promptModel, prompt });
+      if (typeof result.prompt !== 'string' || !result.prompt.trim()) throw new Error('Model tidak menghasilkan prompt yang valid.');
+      setPrompt(result.prompt.trim());
+    } catch (e: any) {
+      setError(e.message || 'Gagal menyusun prompt.');
+    } finally {
+      setEnhancing(false);
+    }
+  };
 
   const generate = async () => {
     if (!apiKey) { setError('API Key CrowLLM belum tersimpan. Buka AI Providers terlebih dahulu.'); return; }
@@ -116,6 +146,20 @@ export default function ImageGenerate({ onTabChange }: Props) {
             {models.map(item => <option key={item.id} value={item.id}>{item.id}{item.free ? ' · Free' : ''}</option>)}
           </select>
           <p className="text-[11px] text-[#66758a] mt-2">Daftar hanya menampilkan model yang katalog CrowLLM tandai mendukung endpoint image generation. Model berbayar dapat menimbulkan biaya sesuai tarif akun.</p>
+        </div>
+
+        <div>
+          <label className="text-[11px] font-semibold text-[#91a0b5] uppercase tracking-wider block mb-2">Model penyusun prompt (DeepSeek)</label>
+          <div className="flex gap-2">
+            <select value={promptModel} onChange={event => setPromptModel(event.target.value)} disabled={!promptModels.length || loadingModels} className="input flex-1">
+              {!promptModels.length && <option value="">Model DeepSeek belum tersedia</option>}
+              {promptModels.map(item => <option key={item.id} value={item.id}>{item.id}</option>)}
+            </select>
+            <button type="button" onClick={enhancePrompt} disabled={!promptModel || !prompt.trim() || enhancing || loadingModels} className="btn-outline text-xs px-3 whitespace-nowrap">
+              {enhancing ? 'Menyusun...' : '✨ Perbaiki prompt'}
+            </button>
+          </div>
+          <p className="text-[11px] text-[#66758a] mt-2">DeepSeek hanya menyusun prompt melalui endpoint chat. Model ini tidak digunakan untuk membuat file gambar.</p>
         </div>
 
         <div>
