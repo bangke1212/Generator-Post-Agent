@@ -293,6 +293,15 @@ ${videoUrl ? `\n🎬 VIDEO TERLAMPIR: Baca dan analisis isi video dari URL yang 
 
 ${TONE_INSTRUCTION[tone] || ''}
 
+${videoUrl ? `🎯 MODE BALASAN LANGSUNG KE VIDEO:
+- Tulis sebagai komentar/reply langsung untuk posting asli, bukan artikel atau renungan.
+- Kalimat pertama WAJIB menjadi hook/reaksi spontan terhadap momen paling lucu, mengejutkan, absurd, atau menarik yang benar-benar terlihat/terdengar.
+- Gunakan 1-3 kalimat pendek, sekitar 20-60 kata per variasi.
+- Fokus pada kejadian di video. Boleh memakai humor, punchline, pertanyaan singkat, atau observasi tajam.
+- Jangan mengarang motif, pesan moral, pelajaran hidup, atau kesimpulan tentang manusia jika tidak tampak jelas di video.
+- Jangan memakai pembuka generik seperti "Kadang gue...", "Video ini mengajarkan...", "Ini bukan berarti...", atau "Alam selalu...".
+- Jangan menjelaskan bahwa kamu sedang menganalisis video; langsung balas seolah-olah kamu melihat posting tersebut.` : ''}
+
 ${langGuidelines}
 ${EMOJI_QUALITY_GUIDE}
 ${modelHint}${modelConstraints}
@@ -312,14 +321,14 @@ ${MODEL_OUTPUT_GUARD}
 ⚠️ SETIAP TWEET HARUS:
 - LANGSUNG mulai dengan isi tweet. JANGAN memberi salam, pengantar, penjelasan, atau kalimat seperti "Saya akan...".
 - JANGAN menyebut nama model, Gemini, AI, asisten, prompt, URL, link, atau proses analisis.
-- 120-150 kata (padat, berbobot)
+- ${videoUrl ? '20-60 kata; ringkas seperti balasan di kolom komentar' : '120-150 kata (padat, berbobot)'}
 - Hook berbeda (random dari 8 hook types)
 - Emoji emosi yang match (ikut EMOJI QUALITY GUIDE)
 - Personal voice: "gue/aku" atau "I" untuk English
 - Akhiri reply bait natural
 - TIDAK BOLEH ada kalimat generik, klise, atau template
 - TIDAK BOLEH pakai frasa formal/akademik
-- JANGAN kurang dari 120 kata atau lebih dari 150 kata
+- ${videoUrl ? 'JANGAN lebih panjang dari 60 kata' : 'JANGAN kurang dari 120 kata atau lebih dari 150 kata'}
 
 TULIS ${maxCount} TWEET:`;
 
