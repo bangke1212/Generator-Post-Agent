@@ -51,6 +51,13 @@ const BOT_PATTERNS: Array<{ p: RegExp; r: string | ((_: string, p1: string, p2: 
   { p: /\b(Dalam konteks ini|Pada akhirnya|Intinya adalah|Kesimpulannya)\s*/gi, r: '' },
 ];
 
+const MODEL_OUTPUT_GUARD = `
+🔒 OUTPUT FINAL — BERLAKU UNTUK SEMUA MODEL:
+- Keluarkan hanya teks tweet siap posting, tanpa salam, pembuka, label, header, atau penjelasan.
+- Jangan menyebut nama model/provider, AI, asisten, prompt, URL, link, atau proses analisis.
+- Jangan menulis kalimat seperti "Saya akan membuatkan...", "Berikut tweetnya...", atau "Sebagai AI...".
+`;
+
 function removeBotStyle(text: string): string {
   let result = text;
   for (const { p, r } of BOT_PATTERNS) result = result.replace(p, r as any);
@@ -211,6 +218,7 @@ ${VIRAL_HOOK_STRATEGY}
 ${ALGO_REPLY_BAIT}
 ${EMOJI_RULES}
 ${ALGO_ANTI_PENALTY}
+${MODEL_OUTPUT_GUARD}
 
 ✅ FORMAT OUTPUT:
 - EMOJI sebagai karakter pertama (wajib)
@@ -292,6 +300,7 @@ ${VIRAL_HOOK_STRATEGY}
 ${ALGO_REPLY_BAIT}
 ${EMOJI_RULES}
 ${ALGO_ANTI_PENALTY}
+${MODEL_OUTPUT_GUARD}
 
 ✅ FORMAT OUTPUT — TIAP VARIASI DIPISAH "---":
 ---
