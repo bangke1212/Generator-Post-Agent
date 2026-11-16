@@ -277,7 +277,10 @@ async function getImageModels(apiKey) {
   if (!response.ok) throw new Error(payload?.error?.message || 'CrowLLM models request failed (HTTP ' + response.status + ').');
 
   const rows = Array.isArray(payload?.data) ? payload.data.filter(item => typeof item?.id === 'string' && item.id.trim()) : [];
-  const isImageEndpoint = value => /image|text[-_ ]?to[-_ ]?image/i.test(String(value || ''));
+  const isImageEndpoint = value => {
+    const normalized = String(value || '').toLowerCase().replace(/[_-]+/g, ' ').trim();
+    return /^(?:images?|image generations?|text to image)$/.test(normalized);
+  };
   const getEndpointTypes = item => Array.isArray(item?.supported_endpoint_types)
     ? item.supported_endpoint_types
     : typeof item?.supported_endpoint_types === 'string' ? [item.supported_endpoint_types] : [];
@@ -293,7 +296,7 @@ async function getImageModels(apiKey) {
   // detail pages for an explicit image endpoint; never infer from the model name.
   if (!models.length) {
     const orderedRows = [...rows].sort((a, b) =>
-      Number(isImageEndpoint(b.id)) - Number(isImageEndpoint(a.id))
+      Number(/image/i.test(b.id)) - Number(/image/i.test(a.id))
     ).slice(0, 48);
     const pages = await mapWithConcurrency(orderedRows, 12, fetchModelPage);
     const imageIds = new Set(pages.filter(page => {
