@@ -120,6 +120,30 @@ async function mapWithConcurrency(items, limit, mapper) {
   return results;
 }
 
+async function resolveXVideo(url) {
+  let parsed;
+  try { parsed = new URL(url); } catch { return { url, text: '' }; }
+  if (!/(?:^|\.)x\.com$|(?:^|\.)twitter\.com$/i.test(parsed.hostname)) return { url, text: '' };
+  const match = parsed.pathname.match(/\/status\/(\d+)/i);
+  if (!match) return { url, text: '' };
+  try {
+    const response = await fetch('https://api.fxtwitter.com/status/' + match[1], {
+      signal: AbortSignal.timeout(7000),
+      headers: { 'User-Agent': 'Generator-Post-Agent/1.0' },
+      cache: 'no-store',
+    });
+    if (!response.ok) return { url, text: '' };
+    const payload = await response.json();
+    const tweet = payload?.tweet;
+    const videos = Array.isArray(tweet?.media?.videos) ? tweet.media.videos : [];
+    const mp4 = videos.find(item => typeof item?.url === 'string' && /\.mp4(?:\?|$)/i.test(item.url))?.url
+      || videos.find(item => typeof item?.url === 'string')?.url;
+    return { url: mp4 || url, text: typeof tweet?.text === 'string' ? tweet.text : '' };
+  } catch {
+    return { url, text: '' };
+  }
+}
+
 async function fetchModelPage(id) {
   const pathId = id.split('/').map(encodeURIComponent).join('/');
   try {
@@ -274,6 +298,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const resolvedMedia = typeof videoUrl === 'string' && /^https?:\/\//i.test(videoUrl)
+      ? await resolveXVideo(videoUrl)
+      : { url: videoUrl, text: '' };
+    const resolvedPrompt = resolvedMedia.text
+      ? `${String(prompt || 'Analisis video ini dan jawab dengan ringkas.')}\n\nKONTEKS TEKS POST X: ${resolvedMedia.text}`
+      : String(prompt || 'Test koneksi — reply dengan OK saja');
     const upstream = await fetch(CROWLLM + '/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -284,13 +314,13 @@ export default async function handler(req, res) {
         model,
         messages: [{
           role: 'user',
-          content: (typeof imageData === 'string' && imageData.startsWith('data:image/')) || (typeof videoUrl === 'string' && /^https?:\/\//i.test(videoUrl))
+          content: (typeof imageData === 'string' && imageData.startsWith('data:image/')) || (typeof resolvedMedia.url === 'string' && /^https?:\/\//i.test(resolvedMedia.url))
             ? [
                 ...(typeof imageData === 'string' && imageData.startsWith('data:image/') ? [{ type: 'image_url', image_url: { url: imageData } }] : []),
-                ...(typeof videoUrl === 'string' && /^https?:\/\//i.test(videoUrl) ? [{ type: 'video_url', video_url: { url: videoUrl } }] : []),
-                { type: 'text', text: String(prompt || 'Analisis media ini dan jawab dengan ringkas.') },
+                ...(typeof resolvedMedia.url === 'string' && /^https?:\/\//i.test(resolvedMedia.url) ? [{ type: 'video_url', video_url: { url: resolvedMedia.url } }] : []),
+                { type: 'text', text: resolvedPrompt },
               ]
-            : String(prompt || 'Test koneksi — reply dengan OK saja'),
+            : resolvedPrompt,
         }],
         max_tokens: Number.isFinite(maxTokens) ? maxTokens : 512,
         temperature: Number.isFinite(temperature) ? temperature : 0.7,
