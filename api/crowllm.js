@@ -293,14 +293,14 @@ async function getImageModels(apiKey) {
   // detail pages for an explicit image endpoint; never infer from the model name.
   if (!models.length) {
     const orderedRows = [...rows].sort((a, b) =>
-      Number(isImageEndpoint(a.id)) - Number(isImageEndpoint(b.id))
+      Number(isImageEndpoint(b.id)) - Number(isImageEndpoint(a.id))
     ).slice(0, 48);
     const pages = await mapWithConcurrency(orderedRows, 12, fetchModelPage);
     const imageIds = new Set(pages.filter(page => {
       if (!page?.html) return false;
       const text = htmlText(page.html);
-      const endpointLabel = text.match(/Endpoints\\s+([a-z0-9,\\s-]{1,120})/i)?.[1] || '';
-      return /\\/v1\\/images\\/generations/i.test(page.html) || isImageEndpoint(endpointLabel);
+      const endpointLabel = text.match(/Endpoints\s+([a-z0-9,\s-]{1,120})/i)?.[1] || '';
+      return /\/v1\/images\/generations/i.test(page.html) || isImageEndpoint(endpointLabel);
     }).map(page => page.id));
     models = rows.filter(item => imageIds.has(item.id)).map(toModel);
   }
