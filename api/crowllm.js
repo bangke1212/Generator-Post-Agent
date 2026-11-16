@@ -264,13 +264,39 @@ async function getFreeChatModels(apiKey) {
   };
 }
 
+async function getImageModels(apiKey) {
+  const response = await fetch(CROWLLM + '/v1/models', {
+    headers: { Authorization: 'Bearer ' + apiKey },
+    signal: AbortSignal.timeout(10000),
+    cache: 'no-store',
+  });
+  const payloadText = await response.text();
+  let payload;
+  try { payload = JSON.parse(payloadText); }
+  catch { throw new Error('CrowLLM /v1/models returned invalid JSON.'); }
+  if (!response.ok) throw new Error(payload?.error?.message || 'CrowLLM models request failed (HTTP ' + response.status + ').');
+
+  const rows = Array.isArray(payload?.data) ? payload.data : [];
+  const isImageEndpoint = value => /image|text[-_ ]?to[-_ ]?image/i.test(String(value || ''));
+  const models = rows.filter(item => {
+    const endpoints = Array.isArray(item?.supported_endpoint_types) ? item.supported_endpoint_types : [];
+    return endpoints.some(isImageEndpoint);
+  }).map(item => ({
+    id: item.id,
+    name: item.name || item.id,
+    free: item.id.endsWith(':free') || hasZeroPricingMetadata(item),
+  }));
+
+  return { models, checkedAt: new Date().toISOString() };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: { message: 'Method not allowed' } });
   }
 
-  const { action, apiKey, model, prompt, imageData, videoUrl, mediaType, maxTokens, temperature } = req.body || {};
+  const { action, apiKey, model, prompt, imageData, videoUrl, mediaType, maxTokens, temperature, size } = req.body || {};
   if (action === 'resolve_video') {
     if (typeof videoUrl !== 'string' || !/^https?:\/\//i.test(videoUrl)) {
       return res.status(400).json({ error: { message: 'URL video tidak valid.' } });
@@ -281,6 +307,52 @@ export default async function handler(req, res) {
   }
   if (typeof apiKey !== 'string' || !apiKey.trim()) {
     return res.status(400).json({ error: { message: 'API Key CrowLLM belum diisi.' } });
+  }
+
+
+  if (action === 'image_models') {
+    try {
+      const catalog = await getImageModels(apiKey.trim());
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json(catalog);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown CrowLLM error';
+      return res.status(502).json({ error: { message: 'Gagal mengambil model image CrowLLM: ' + message } });
+    }
+  }
+
+  if (action === 'generate_image') {
+    if (typeof model !== 'string' || !model.trim()) {
+      return res.status(400).json({ error: { message: 'Pilih model image CrowLLM terlebih dahulu.' } });
+    }
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      return res.status(400).json({ error: { message: 'Prompt gambar tidak boleh kosong.' } });
+    }
+    try {
+      const upstream = await fetch(CROWLLM + '/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + apiKey.trim(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model.trim(),
+          prompt: prompt.trim(),
+          n: 1,
+          size: typeof size === 'string' && /^\d{3,4}x\d{3,4}$/.test(size) ? size : '1024x1024',
+        }),
+        signal: AbortSignal.timeout(52000),
+      });
+      const body = await upstream.text();
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(upstream.status).send(body);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown upstream error';
+      return res.status(502).json({
+        error: { message: 'Backend Vercel gagal menghubungi endpoint image CrowLLM: ' + message },
+      });
+    }
   }
 
   if (action === 'models') {
