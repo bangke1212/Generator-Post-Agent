@@ -1,6 +1,7 @@
 // Same-origin proxy for CrowLLM. Keeps browser CORS out of the request path.
 const CROWLLM = 'https://crowllm.com';
-export const config = { maxDuration: 30 };
+// Give slow CrowLLM generations more room before Vercel terminates the function.
+export const config = { maxDuration: 60 };
 
 function decodeHtml(value) {
   return value.replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
@@ -342,7 +343,7 @@ export default async function handler(req, res) {
         temperature: Number.isFinite(temperature) ? temperature : 0.7,
         stream: false,
       }),
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(52000),
     });
 
     const body = await upstream.text();
