@@ -3,33 +3,38 @@
 @tailwind utilities;
 
 /*
- * PostPilot — design contract (ruang redaksi untuk X)
- * Permukaan solid warna tinta (#0A0E13), bukan gradient. Hierarki lewat
- * tipografi: Space Grotesk untuk judul, Inter untuk isi, JetBrains Mono
- * untuk angka/label. Satu aksen bermakna, hijau sinyal (#2DD4A7), hanya
- * untuk status siap / aktif / terpilih. Kartu datar dengan garis rambut
- * 1px; radius dibedakan per peran (kartu 12, kontrol 8, lencana 6).
- * Tombol utama putih solid ala X. Tanpa orb, glow, dan glass.
+ * PostPilot — design contract v2 (studio siang yang hidup, bukan kusam)
+ * Latar kertas hangat (#FAF9F6); sidebar + topbar putih bersih; kartu putih
+ * dengan border halus dan shadow lembut secukupnya. Teks tinta kontras
+ * tinggi (#0F172A / #475569 / #64748B). Tipografi sama seperti v1:
+ * Space Grotesk untuk judul, Inter untuk isi, JetBrains Mono untuk
+ * angka/label. Dua aksen bermakna dan hemat: biru X (#1D9BF0) untuk brand,
+ * nav aktif, link, dan aksi utama; oranye hangat (#F97316) hanya untuk
+ * CTA Generate. Hijau (#059669) hanya untuk status sukses/siap. Energi
+ * datang dari warna solid yang jenuh + ruang putih yang lega + tipografi
+ * besar — bukan dari gradient, glass, glow, atau orb. Tanpa gradient.
  */
 
 :root {
-  --bg-root: #0a0e13;
-  --bg-card: #111823;
-  --bg-elevated: #161f2c;
-  --bg-input: #0d131c;
-  --text-primary: #edeff2;
-  --text-secondary: #9aa7b8;
+  --bg-root: #faf9f6;
+  --bg-card: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --bg-input: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
   --text-muted: #64748b;
-  --border-default: #1e2937;
-  --border-strong: #2c3b4e;
-  --primary: #edeff2;
-  --primary-ink: #0a0e13;
-  --accent: #2dd4a7;
-  --accent-ink: #06281f;
-  --accent-soft: rgba(45, 212, 167, 0.12);
-  --success: #34d399;
-  --danger: #f87171;
-  --warning: #fbbf24;
+  --border-default: #e7e5e0;
+  --border-strong: #cbd5e1;
+  --primary: #1d9bf0;
+  --primary-hover: #1a8cd8;
+  --primary-ink: #ffffff;
+  --accent: #f97316;
+  --accent-hover: #ea580c;
+  --accent-ink: #ffffff;
+  --accent-soft: #e8f4fd;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #b45309;
 }
 
 body {
@@ -45,76 +50,77 @@ h1, h2, h3 {
 }
 
 ::selection {
-  background: rgba(45, 212, 167, 0.28);
+  background: rgba(29, 155, 240, 0.2);
   color: var(--text-primary);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 @layer components {
   .card {
-    @apply relative bg-ink-panel border border-line rounded-card p-6 transition-colors duration-200;
+    @apply relative bg-white border border-line rounded-card p-6 transition-colors duration-200;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.04);
   }
   .card:hover {
     border-color: var(--border-strong);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.06);
   }
-  /* Kartu unggulan: dibedakan oleh spine sinyal 2px di kiri, bukan glow. */
+  /* Kartu unggulan: dibedakan oleh spine biru X 2px di kiri, bukan glow. */
   .card-glow {
     @apply card;
-    background: var(--bg-elevated);
+    background: #f8fafc;
     border-color: var(--border-strong);
-    box-shadow: inset 2px 0 0 var(--accent);
+    box-shadow: inset 2px 0 0 var(--primary);
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm text-white transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
     background: var(--primary);
-    color: var(--primary-ink);
   }
   .btn-primary:hover:not(:disabled) {
-    background: #ffffff;
+    background: var(--primary-hover);
   }
 
+  /* CTA Generate: oranye hangat solid — satu-satunya tombol oranye. */
   .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm text-white transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed;
     background: var(--accent);
-    color: var(--accent-ink);
   }
   .btn-accent:hover:not(:disabled) {
-    background: #5ee6c0;
+    background: var(--accent-hover);
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm border border-line text-paper transition-colors duration-200 hover:border-line-strong hover:bg-white/5;
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm border border-line-strong text-paper transition-colors duration-200 hover:border-signal hover:bg-[#f0f9ff] bg-white;
   }
   .btn-ghost {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-control text-sm font-medium text-fog hover:text-paper hover:bg-white/5 transition-colors duration-200;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-control text-sm font-medium text-fog hover:text-paper hover:bg-[#f1f5f9] transition-colors duration-200;
   }
 
   .input {
-    @apply bg-ink-input border border-line rounded-control px-4 py-3 text-sm text-paper placeholder:text-mist w-full transition-colors duration-200 focus:outline-none focus:border-signal;
+    @apply bg-white border border-line-strong rounded-control px-4 py-3 text-sm text-paper placeholder:text-mist w-full transition-colors duration-200 focus:outline-none focus:border-signal;
   }
   .input:focus {
-    box-shadow: 0 0 0 3px rgba(45, 212, 167, 0.16);
+    box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.18);
   }
 
   .badge {
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-tag text-xs font-semibold tracking-wide;
   }
-  .badge-success { @apply bg-[#34d399]/10 text-[#34d399] border border-[#34d399]/25; }
-  .badge-danger { @apply bg-[#f87171]/10 text-[#f87171] border border-[#f87171]/25; }
-  .badge-warning { @apply bg-[#fbbf24]/10 text-[#fbbf24] border border-[#fbbf24]/25; }
-  .badge-info { @apply bg-white/5 text-fog border border-line; }
-  .badge-accent { @apply bg-[#2dd4a7]/10 text-[#2dd4a7] border border-[#2dd4a7]/25; }
-  .badge-default { @apply bg-white/5 text-fog border border-line; }
+  .badge-success { @apply bg-[#dcfce7] text-[#15803d] border border-[#86efac]; }
+  .badge-danger { @apply bg-[#fee2e2] text-[#b91c1c] border border-[#fca5a5]; }
+  .badge-warning { @apply bg-[#fef3c7] text-[#92400e] border border-[#fcd34d]; }
+  .badge-info { @apply bg-[#dbeafe] text-[#1d4ed8] border border-[#93c5fd]; }
+  .badge-accent { @apply bg-[#e8f4fd] text-[#0369a1] border border-[#7dd3fc]; }
+  .badge-default { @apply bg-[#f1f5f9] text-fog border border-line-strong; }
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2c3b4e; border-radius: 20px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(8px); }
@@ -144,14 +150,15 @@ h1, h2, h3 {
 
 .toggle-switch {
   @apply relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer;
-  background: #1e2937;
+  background: #cbd5e1;
 }
 .toggle-switch.active {
-  background: var(--accent);
+  background: var(--primary);
 }
 .toggle-switch::after {
   content: '';
   @apply absolute top-1 left-1 w-5 h-5 rounded-full bg-white transition-all duration-200;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
 }
 .toggle-switch.active::after { transform: translateX(20px); }
 
@@ -164,30 +171,31 @@ h1, h2, h3 {
   top: 0; left: 0; right: 0;
   height: 2px;
 }
-.stat-card.blue::before { background: #6366f1; }
-.stat-card.green::before { background: #10b981; }
-.stat-card.red::before { background: #ef4444; }
+.stat-card.blue::before { background: #1d9bf0; }
+.stat-card.green::before { background: #059669; }
+.stat-card.red::before { background: #dc2626; }
 .stat-card.amber::before { background: #f59e0b; }
 
 .chip {
-  @apply px-4 py-2.5 rounded-control text-sm font-medium transition-colors duration-200 cursor-pointer border border-line text-fog hover:text-paper hover:border-line-strong hover:bg-white/5;
+  @apply px-4 py-2.5 rounded-control text-sm font-medium transition-colors duration-200 cursor-pointer border border-line-strong text-fog hover:text-paper hover:border-line-strong hover:bg-[#f8fafc] bg-white;
 }
 .chip.active {
-  @apply text-paper border-[#2dd4a7]/60 bg-[#2dd4a7]/10;
+  @apply text-[#0369a1] border-[#1d9bf0] bg-[#e8f4fd];
 }
 
 .toast {
   @apply fixed bottom-6 right-6 z-50 px-5 py-3.5 rounded-card text-sm font-medium animate-fade-in-up border;
-  background: var(--bg-elevated);
+  background: #ffffff;
   border-color: var(--border-strong);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
 }
-.toast-success { @apply text-[#34d399]; }
-.toast-error { @apply text-[#f87171]; }
+.toast-success { @apply text-[#15803d]; }
+.toast-error { @apply text-[#b91c1c]; }
 .toast-info { @apply text-fog; }
 
 select.input {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239aa7b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23475569' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
@@ -209,7 +217,7 @@ select.input {
   z-index: 30;
   padding: 24px 16px 20px;
   border-right: 1px solid var(--border-default);
-  background: #0c1118;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
 }
@@ -239,7 +247,7 @@ select.input {
   border-radius: 10px;
   display: grid;
   place-items: center;
-  color: var(--primary-ink);
+  color: #ffffff;
   background: var(--primary);
   flex: none;
 }
@@ -259,7 +267,7 @@ select.input {
   padding: 12px;
   border: 1px solid var(--border-default);
   border-radius: 10px;
-  background: var(--bg-card);
+  background: #f8fafc;
   margin-bottom: 24px;
 }
 .live-dot {
@@ -267,8 +275,8 @@ select.input {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(45, 212, 167, 0.14);
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
   flex: none;
 }
 .rail-status strong { display: block; font-size: 12px; }
@@ -302,11 +310,11 @@ select.input {
   padding: 10px;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
-.rail-nav button:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.04); }
+.rail-nav button:hover { color: var(--text-primary); background: #f5f5f4; }
 .rail-nav button.active {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--accent-soft);
+  color: #0369a1;
+  box-shadow: inset 2px 0 0 var(--primary);
 }
 .nav-icon {
   width: 28px;
@@ -314,15 +322,16 @@ select.input {
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: var(--bg-elevated);
+  background: #f1f5f9;
   color: var(--text-secondary);
   font-size: 15px;
   flex: none;
 }
-.rail-nav button.active .nav-icon { background: var(--accent-soft); color: var(--accent); }
+.rail-nav button.active .nav-icon { background: #dbeafe; color: #0284c7; }
 .rail-nav b { display: block; font-size: 13px; font-weight: 600; }
 .rail-nav small { display: block; color: var(--text-muted); font-size: 11px; margin-top: 2px; }
-.rail-nav i { font-style: normal; color: var(--accent); margin-left: auto; }
+.rail-nav button.active small { color: #0284c7; }
+.rail-nav i { font-style: normal; color: var(--primary); margin-left: auto; }
 
 .rail-tip {
   margin-top: auto;
@@ -330,11 +339,11 @@ select.input {
   gap: 10px;
   padding: 13px 12px;
   border-radius: 10px;
-  background: rgba(45, 212, 167, 0.06);
-  border: 1px solid rgba(45, 212, 167, 0.2);
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
 }
 .rail-tip > span { color: var(--accent); font-size: 18px; }
-.rail-tip strong { display: block; font-size: 12px; color: #c9f5e4; }
+.rail-tip strong { display: block; font-size: 12px; color: #7c2d12; }
 .rail-tip small { display: block; color: var(--text-secondary); font-size: 11px; line-height: 1.5; margin-top: 3px; }
 .rail-footer {
   display: flex;
@@ -348,7 +357,7 @@ select.input {
   border-top: 1px solid var(--border-default);
   margin-top: 16px;
 }
-.secure-mark { color: #5d897e; }
+.secure-mark { color: #94a3b8; }
 
 .app-main { margin-left: 264px; min-width: 0; flex: 1; position: relative; }
 
@@ -360,7 +369,7 @@ select.input {
   gap: 20px;
   padding: 0 clamp(20px, 3vw, 48px);
   border-bottom: 1px solid var(--border-default);
-  background: #0c1118;
+  background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -397,15 +406,15 @@ select.input {
 }
 .header-generate {
   border: 0;
-  background: var(--primary);
-  color: var(--primary-ink);
+  background: var(--accent);
+  color: #ffffff;
   border-radius: 8px;
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 600;
   transition: background-color 0.15s ease;
 }
-.header-generate:hover { background: #ffffff; }
+.header-generate:hover { background: var(--accent-hover); }
 .header-generate span { margin-right: 6px; }
 .avatar {
   width: 32px;
@@ -414,15 +423,15 @@ select.input {
   border-radius: 8px;
   display: grid;
   place-items: center;
-  color: var(--text-primary);
-  background: var(--bg-elevated);
+  color: #0369a1;
+  background: #e8f4fd;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 11px;
 }
 .mobile-menu-button {
   display: none;
   border: 1px solid var(--border-default);
-  background: var(--bg-card);
+  background: #ffffff;
   color: var(--text-secondary);
   border-radius: 8px;
   width: 32px;
@@ -459,7 +468,7 @@ select.input {
   .workspace-rail { transform: translateX(-100%); transition: transform 0.25s ease; }
   .workspace-rail.is-open { transform: translateX(0); }
   .rail-close { display: block; }
-  .drawer-scrim { display: block; position: fixed; inset: 0; border: 0; background: rgba(0, 0, 0, 0.6); z-index: 25; }
+  .drawer-scrim { display: block; position: fixed; inset: 0; border: 0; background: rgba(15, 23, 42, 0.45); z-index: 25; }
   .app-main { margin-left: 0; }
   .mobile-menu-button { display: block; }
   .topbar { height: 68px; padding: 0 18px; }

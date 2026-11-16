@@ -4,35 +4,46 @@ export default {
   theme: {
     extend: {
       colors: {
+        // v2 cerah: kertas hangat + putih bersih, teks tinta kontras tinggi.
+        // Aksen: biru X (#1D9BF0) untuk brand/nav/aksi, oranye hangat
+        // (#F97316) hanya untuk CTA Generate, hijau hanya untuk sukses.
         ink: {
-          DEFAULT: '#0A0E13',
-          panel: '#111823',
-          raised: '#161F2C',
-          input: '#0D131C',
-          rail: '#0C1118',
+          DEFAULT: '#0F172A',
+          panel: '#FFFFFF',
+          raised: '#F8FAFC',
+          input: '#FFFFFF',
+          rail: '#FFFFFF',
         },
-        paper: '#EDEFF2',
-        fog: '#9AA7B8',
+        paper: '#0F172A',
+        fog: '#475569',
         mist: '#64748B',
         line: {
-          DEFAULT: '#1E2937',
-          strong: '#2C3B4E',
+          DEFAULT: '#E7E5E0',
+          strong: '#CBD5E1',
         },
         signal: {
-          DEFAULT: '#2DD4A7',
-          ink: '#06281F',
-          soft: '#5EE6C0',
+          DEFAULT: '#1D9BF0',
+          ink: '#FFFFFF',
+          soft: '#E8F4FD',
         },
-        // Kunci lama dipertahankan agar class yang masih memakainya tetap jalan,
-        // nilainya dipetakan ke palet baru (bukan lagi indigo/cyan generik).
-        primary: '#EDEFF2',
-        'primary-light': '#FFFFFF',
-        'primary-dark': '#C7CDD6',
-        accent: '#2DD4A7',
-        'accent-light': '#5EE6C0',
-        dark: '#0A0E13',
-        'dark-card': '#111823',
-        'dark-elevated': '#161F2C',
+        warm: {
+          DEFAULT: '#F97316',
+          ink: '#FFFFFF',
+          soft: '#FFF1E6',
+        },
+        success: '#059669',
+        danger: '#DC2626',
+        warning: '#B45309',
+        // Kunci lama dipertahankan agar class yang masih memakainya tetap
+        // jalan; nilainya dipetakan ke palet cerah v2.
+        primary: '#1D9BF0',
+        'primary-light': '#4FB3F6',
+        'primary-dark': '#1A8CD8',
+        accent: '#F97316',
+        'accent-light': '#FFF1E6',
+        dark: '#0F172A',
+        'dark-card': '#FFFFFF',
+        'dark-elevated': '#F8FAFC',
       },
       fontFamily: {
         display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],

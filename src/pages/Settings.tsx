@@ -167,19 +167,19 @@ export default function Settings() {
             {keys.map(k => {
               const p = (PROVIDER_PRESETS as any)[k.provider];
               return (
-                <div key={k.provider} className={`flex items-center justify-between p-4 rounded-2xl border ${k.is_active ? 'border-[#2dd4a7]/30 bg-[#2dd4a7]/5' : 'border-[#1e2937] bg-[#0d131c]'}`}>
+                <div key={k.provider} className={`flex items-center justify-between p-4 rounded-2xl border ${k.is_active ? 'border-[#1D9BF0]/30 bg-[#1D9BF0]/5' : 'border-[#E2E8F0] bg-[#F8FAFC]'}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-[#ffffff05]">{p?.icon || '🔧'}</div>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-[#F1F5F9]">{p?.icon || '🔧'}</div>
                     <div>
                       <p className="text-sm font-semibold flex items-center gap-2">
                         {p?.name || k.provider}
-                        {k.is_active && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2dd4a7] opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-[#2dd4a7]"></span></span>}
+                        {k.is_active && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1D9BF0] opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-[#1D9BF0]"></span></span>}
                       </p>
                       <p className="text-xs text-[#64748b] mt-0.5">{k.model?.split('/').pop() || '—'} · {k.api_key.slice(0,4)}****{k.api_key.slice(-4)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    {!k.is_active && <button onClick={() => handleActivate(k.provider)} className="btn-ghost text-xs text-[#2dd4a7]">Aktifkan</button>}
+                    {!k.is_active && <button onClick={() => handleActivate(k.provider)} className="btn-ghost text-xs text-[#0284C7]">Aktifkan</button>}
                     <button onClick={() => handleDelete(k.provider)} className="btn-ghost text-xs text-[#ef4444]">🗑️</button>
                   </div>
                 </div>
@@ -193,14 +193,14 @@ export default function Settings() {
         <h3 className="text-sm font-semibold">Tambah / Edit API Key</h3>
 
         <div>
-          <label className="text-[11px] font-semibold text-[#9aa7b8] uppercase tracking-wider mb-2.5 block">Provider</label>
+          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider mb-2.5 block">Provider</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {Object.entries(PROVIDER_PRESETS).filter(([slug]) => slug !== 'custom').map(([slug, info]: any) => {
               const hasKey = keys.some(k => k.provider === slug);
               return (
-                <button key={slug} onClick={() => setProvider(slug)} className={`p-3 rounded-2xl border text-center relative ${provider === slug ? 'border-[#2dd4a7] bg-[#2dd4a7]/10' : 'border-[#1e2937] hover:border-[#2c3b4e]'}`}>
+                <button key={slug} onClick={() => setProvider(slug)} className={`p-3 rounded-2xl border text-center relative ${provider === slug ? 'border-[#1D9BF0] bg-[#1D9BF0]/10' : 'border-[#E2E8F0] hover:border-[#CBD5E1]'}`}>
                   {hasKey && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#10b981]"></span>}
-                  <span className="text-xl block mb-1.5">{info.icon}</span><span className="text-[11px] font-medium text-[#9aa7b8]">{info.name}</span>
+                  <span className="text-xl block mb-1.5">{info.icon}</span><span className="text-[11px] font-medium text-[#475569]">{info.name}</span>
                 </button>
               );
             })}
@@ -208,7 +208,7 @@ export default function Settings() {
         </div>
 
         <div>
-          <label className="text-[11px] font-semibold text-[#9aa7b8] uppercase tracking-wider mb-2.5 block">Model</label>
+          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider mb-2.5 block">Model</label>
           <div className="flex flex-col sm:flex-row gap-2">
             <select value={model} onChange={e => handleModelChange(e.target.value)} className="input flex-1" disabled={modelOptions.length === 0}>
               {model && !modelOptions.some(item => item.id === model) && (
@@ -231,29 +231,29 @@ export default function Settings() {
                 ? 'Daftar model tambahan berasal dari /v1/models. Katalog ini opsional; Test Koneksi memvalidasi model langsung melalui endpoint chat.'
                 : `${CROWLLM_FREE_MODELS.length} model rekomendasi ditampilkan sebagai kandidat awal. Anda dapat langsung menyimpan dan menguji model dengan API key melalui Test Koneksi.`}{' '}
               Tier Free memiliki batas umum beberapa panggilan per menit; CrowLLM tidak mencantumkan RPM khusus per model.{' '}
-              <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#2dd4a7] hover:text-[#5ee6c0]">Lihat status live CrowLLM</a>.
-              {modelSyncMessage && <span className="block mt-1 text-[#9aa7b8]">{modelSyncMessage}</span>}
+              <a href="https://crowllm.com/status" target="_blank" rel="noopener noreferrer" className="text-[#0284C7] hover:text-[#0284C7]">Lihat status live CrowLLM</a>.
+              {modelSyncMessage && <span className="block mt-1 text-[#475569]">{modelSyncMessage}</span>}
             </p>
             {crowllmSynced && (
-              <div className="mt-3 rounded-xl border border-[#2c3b4e] bg-[#0d131c] p-3 space-y-2">
+              <div className="mt-3 rounded-xl border border-[#CBD5E1] bg-[#F8FAFC] p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9aa7b8]">Status model · 24 jam</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#475569]">Status model · 24 jam</span>
                   <span className="text-[10px] text-[#64748b]">Data CrowLLM</span>
                 </div>
                 {crowllmModels.map(item => {
                   const status = item.status || 'no_data';
-                  const statusColor = status === 'healthy' ? 'text-[#34d399]' : status === 'degraded' ? 'text-[#fbbf24]' : status === 'unstable' || status === 'unavailable' ? 'text-[#f87171]' : 'text-[#9aa7b8]';
+                  const statusColor = status === 'healthy' ? 'text-[#059669]' : status === 'degraded' ? 'text-[#B45309]' : status === 'unstable' || status === 'unavailable' ? 'text-[#DC2626]' : 'text-[#475569]';
                   const latency = item.averageLatencyMs == null ? 'Latency —' : item.averageLatencyMs >= 1000 ? `Latency ${(item.averageLatencyMs / 1000).toFixed(1)} dtk` : `Latency ${Math.round(item.averageLatencyMs)} ms`;
                   return (
-                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-[#1e2937] pt-2 first:border-0 first:pt-0">
-                      <span className="min-w-0 flex-1 break-all text-[11px] text-[#d7dee8]">{item.id}</span>
+                    <div key={item.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-[#E2E8F0] pt-2 first:border-0 first:pt-0">
+                      <span className="min-w-0 flex-1 break-all text-[11px] text-[#1F2937]">{item.id}</span>
                       <span className={`text-[10px] font-semibold ${statusColor}`}>{crowllmStatusLabels[status]}</span>
-                      <span className="text-[10px] text-[#9aa7b8]">{item.successRate == null ? 'Success —' : `Success ${item.successRate.toFixed(1)}%`}</span>
-                      <span className="text-[10px] text-[#9aa7b8]">{latency}</span>
+                      <span className="text-[10px] text-[#475569]">{item.successRate == null ? 'Success —' : `Success ${item.successRate.toFixed(1)}%`}</span>
+                      <span className="text-[10px] text-[#475569]">{latency}</span>
                     </div>
                   );
                 })}
-                {crowllmModels.length === 0 && <p className="text-xs text-[#fbbf24]">Tidak ada model gratis yang lolos verifikasi endpoint chat.</p>}
+                {crowllmModels.length === 0 && <p className="text-xs text-[#B45309]">Tidak ada model gratis yang lolos verifikasi endpoint chat.</p>}
               </div>
             )}
             </div>
@@ -262,20 +262,20 @@ export default function Settings() {
 
         {/* Model Info Card */}
         {modelProfile && (
-          <div className="p-4 rounded-2xl border border-[#1e2937] bg-[#0d131c] space-y-2 text-xs">
+          <div className="p-4 rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] space-y-2 text-xs">
             <div className="flex items-center gap-2">
               <span className="badge badge-accent text-[10px]">Best for</span>
-              <span className="text-[#d7dee8]">{modelProfile.bestFor}</span>
+              <span className="text-[#1F2937]">{modelProfile.bestFor}</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="badge badge-info text-[10px] shrink-0 mt-0.5">Strengths</span>
-              <span className="text-[#9aa7b8]">{modelProfile.strengths?.join(' · ')}</span>
+              <span className="text-[#475569]">{modelProfile.strengths?.join(' · ')}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="badge badge-default text-[10px]">Temp</span>
-              <span className="text-[#9aa7b8]">{modelProfile.temperature}</span>
+              <span className="text-[#475569]">{modelProfile.temperature}</span>
               <span className="badge badge-default text-[10px] ml-3">Tokens</span>
-              <span className="text-[#9aa7b8]">{modelProfile.maxTokens}</span>
+              <span className="text-[#475569]">{modelProfile.maxTokens}</span>
             </div>
             {(PROVIDER_PRESETS as any)[provider]?.rateLimitNote && (
               <p className="text-[#64748b] italic">{(PROVIDER_PRESETS as any)[provider].rateLimitNote}</p>
@@ -284,7 +284,7 @@ export default function Settings() {
         )}
 
         <div>
-          <label className="text-[11px] font-semibold text-[#9aa7b8] uppercase tracking-wider mb-2.5 block">API Key</label>
+          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider mb-2.5 block">API Key</label>
           <input type="password" value={apiKey} onChange={e => {
             setApiKey(e.target.value);
             if (provider === 'crowllm') {
@@ -297,7 +297,7 @@ export default function Settings() {
             placeholder={`${(PROVIDER_PRESETS as any)[provider]?.name || ''} API Key...`} className="input font-mono text-sm" />
           {(PROVIDER_PRESETS as any)[provider]?.docs && (
             <a href={(PROVIDER_PRESETS as any)[provider].docs} target="_blank" rel="noopener"
-              className="text-xs text-[#2dd4a7] hover:text-[#5ee6c0] mt-2 inline-flex items-center gap-1">📖 Dapatkan API Key →</a>
+              className="text-xs text-[#0284C7] hover:text-[#0284C7] mt-2 inline-flex items-center gap-1">📖 Dapatkan API Key →</a>
           )}
         </div>
 
@@ -310,8 +310,8 @@ export default function Settings() {
           <div className={`p-4 rounded-2xl border animate-scale-in ${testResult.success ? 'bg-[#10b981]/5 border-[#10b981]/20' : 'bg-[#ef4444]/5 border-[#ef4444]/20'}`}>
             <div className="flex items-center gap-3">
               <span className="text-xl">{testResult.success ? '✅' : '❌'}</span>
-              <div><p className={`text-sm font-semibold ${testResult.success ? 'text-[#34d399]' : 'text-[#f87171]'}`}>{testResult.success ? 'Koneksi berhasil!' : 'Koneksi gagal'}</p>
-              {testResult.error && <p className="text-xs text-[#f87171]/70 mt-1">{testResult.error}</p>}</div>
+              <div><p className={`text-sm font-semibold ${testResult.success ? 'text-[#059669]' : 'text-[#DC2626]'}`}>{testResult.success ? 'Koneksi berhasil!' : 'Koneksi gagal'}</p>
+              {testResult.error && <p className="text-xs text-[#DC2626]/70 mt-1">{testResult.error}</p>}</div>
             </div>
           </div>
         )}

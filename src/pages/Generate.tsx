@@ -50,7 +50,7 @@ export default function Generate({ onTabChange }: Props) {
       </div>
 
       <div className="card-glow space-y-4">
-        <label className="text-[11px] font-semibold text-[#9aa7b8] uppercase tracking-wider block">🎯 Topik</label>
+        <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block">🎯 Topik</label>
         <div className="flex flex-wrap gap-2">
           {topics.map(t => (
             <button key={t} onClick={() => setTopic(t)}
@@ -63,7 +63,7 @@ export default function Generate({ onTabChange }: Props) {
         {loading ? <span className="flex items-center gap-3"><svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Generating...</span> : <span className="flex items-center gap-3"><span className="text-xl">✨</span> Generate Konten AI</span>}
       </button>
 
-      {error && <div className="card border-[#ef4444]/30 bg-[#ef4444]/5 animate-scale-in"><div className="flex items-start gap-3"><span className="text-2xl">⚠️</span><p className="text-sm text-[#f87171]">{error}</p></div></div>}
+      {error && <div className="card border-[#ef4444]/30 bg-[#ef4444]/5 animate-scale-in"><div className="flex items-start gap-3"><span className="text-2xl">⚠️</span><p className="text-sm text-[#DC2626]">{error}</p></div></div>}
 
       {result && (
         <div className="card-glow space-y-4 animate-scale-in">
@@ -72,8 +72,8 @@ export default function Generate({ onTabChange }: Props) {
             {result.provider && <span className="text-[10px] text-[#64748b]">via {result.provider}</span>}
             <span className="ml-auto text-xs text-[#64748b]">~{result.content.split(/\s+/).length} kata</span>
           </div>
-          <div className="bg-[#0d131c] rounded-2xl p-5 border border-[#1e2937] relative group">
-            <p className="text-sm leading-[1.8] whitespace-pre-wrap text-[#d7dee8]">{result.content}</p>
+          <div className="bg-[#F8FAFC] rounded-2xl p-5 border border-[#E2E8F0] relative group">
+            <p className="text-sm leading-[1.8] whitespace-pre-wrap text-[#1F2937]">{result.content}</p>
             <button onClick={handleCopy} className="absolute top-3 right-3 btn-ghost text-xs opacity-0 group-hover:opacity-100">{copied ? '✅' : '📋'}</button>
           </div>
           <div className="flex gap-3">
@@ -86,7 +86,7 @@ export default function Generate({ onTabChange }: Props) {
       {!loading && !result && !error && (
         <div className="card text-center py-10 space-y-3 animate-fade-in">
           <div className="text-5xl animate-float">✨</div>
-          <p className="text-[#9aa7b8] font-medium">Pilih topik dan klik Generate</p>
+          <p className="text-[#475569] font-medium">Pilih topik dan klik Generate</p>
           <p className="text-xs text-[#64748b] max-w-sm mx-auto">Tweet viral-ready dengan hook kuat & reply bait — optimized X Algorithm 2026</p>
         </div>
       )}
