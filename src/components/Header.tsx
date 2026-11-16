@@ -7,6 +7,7 @@ interface HeaderProps {
 const labels: Record<string, { eyebrow: string; title: string }> = {
   ideas: { eyebrow: 'IDEA STUDIO', title: 'Turn a thought into a conversation' },
   generate: { eyebrow: 'QUICK GENERATE', title: 'Shape one post with intent' },
+  images: { eyebrow: 'TEXT TO IMAGE', title: 'Turn a prompt into an image' },
   settings: { eyebrow: 'AI PROVIDERS', title: 'Connect the models you trust' },
 };
 
