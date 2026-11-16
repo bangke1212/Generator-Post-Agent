@@ -186,6 +186,7 @@ export interface GenerateParams {
   baseUrl?: string;
   model: string;
   prompt: string;
+  imageData?: string;
   maxTokens?: number;
   temperature?: number;
 }
@@ -211,7 +212,7 @@ export function getModelProfile(provider: string, model: string): ModelConfig | 
 }
 
 export async function callAI(params: GenerateParams): Promise<{ content: string; provider: string; model: string }> {
-  const { provider, apiKey, baseUrl, model, prompt, maxTokens, temperature } = params;
+  const { provider, apiKey, baseUrl, model, prompt, imageData, maxTokens, temperature } = params;
 
   const preset = PROVIDER_PRESETS[provider];
   if (!preset) throw new Error('Provider ' + provider + ' tidak dikenal');
@@ -233,6 +234,7 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
           apiKey,
           model,
           prompt,
+          imageData,
           maxTokens: maxTokens || optimal.maxTokens,
           temperature: temperature ?? optimal.temperature,
         }),
@@ -301,9 +303,16 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     dangerouslyAllowBrowser: true,
   });
 
+  const messageContent: any = imageData
+    ? [
+        { type: 'image_url', image_url: { url: imageData } },
+        { type: 'text', text: prompt },
+      ]
+    : prompt;
+
   const res = await openai.chat.completions.create({
     model,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: messageContent }],
     max_tokens: maxTokens || optimal.maxTokens,
     temperature: temperature ?? optimal.temperature,
   });

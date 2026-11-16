@@ -238,7 +238,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: { message: 'Method not allowed' } });
   }
 
-  const { action, apiKey, model, prompt, maxTokens, temperature } = req.body || {};
+  const { action, apiKey, model, prompt, imageData, maxTokens, temperature } = req.body || {};
   if (typeof apiKey !== 'string' || !apiKey.trim()) {
     return res.status(400).json({ error: { message: 'API Key CrowLLM belum diisi.' } });
   }
@@ -281,7 +281,15 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: 'user', content: String(prompt || 'Test koneksi — reply dengan OK saja') }],
+        messages: [{
+          role: 'user',
+          content: typeof imageData === 'string' && imageData.startsWith('data:image/')
+            ? [
+                { type: 'image_url', image_url: { url: imageData } },
+                { type: 'text', text: String(prompt || 'Analisis gambar ini dan jawab dengan ringkas.') },
+              ]
+            : String(prompt || 'Test koneksi — reply dengan OK saja'),
+        }],
         max_tokens: Number.isFinite(maxTokens) ? maxTokens : 512,
         temperature: Number.isFinite(temperature) ? temperature : 0.7,
         stream: false,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ChangeEvent, useState } from 'react';
 import { generateIdeas, GeneratedIdea } from '../gemini';
 import { insertPost, getActiveApiKey } from '../store';
 
@@ -16,6 +16,8 @@ const LANGS = [
 
 export default function Ideas({ onTabChange }: Props) {
   const [idea, setIdea] = useState('');
+  const [imageData, setImageData] = useState('');
+  const [imageName, setImageName] = useState('');
   const [tone, setTone] = useState('supportif');
   const [lang, setLang] = useState('id');
   const [count, setCount] = useState(5);
@@ -27,15 +29,43 @@ export default function Ideas({ onTabChange }: Props) {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/jpg'].includes(file.type)) {
+      setError('Gunakan gambar JPG/JPEG saja.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setError('Ukuran gambar maksimal 3 MB agar aman dikirim ke model.');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageData(typeof reader.result === 'string' ? reader.result : '');
+      setImageName(file.name);
+      setError('');
+    };
+    reader.onerror = () => setError('Gambar gagal dibaca. Coba pilih file JPG lain.');
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImageData('');
+    setImageName('');
+  };
+
   const handleGenerate = async () => {
-    if (!idea.trim()) return;
+    if (!idea.trim() && !imageData) return;
     setLoading(true);
     setError('');
     setIdeas([]);
     setSelected(new Set());
     setPostedIds(new Set());
     try {
-      const result = await generateIdeas({ idea: idea.trim(), language: lang, tone, count });
+      const result = await generateIdeas({ idea: idea.trim(), imageData, language: lang, tone, count });
       if (result.provider === 'none') {
         setError('⚠️ Belum ada API key aktif.\nBuka tab Settings → pilih provider → input key → klik Simpan & Aktifkan.');
       } else if (result.provider === 'error') {
@@ -52,7 +82,7 @@ export default function Ideas({ onTabChange }: Props) {
   const handlePost = (item: GeneratedIdea) => {
     setPosting(item.id);
     try {
-      insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
+      insertPost({ content: item.content, topic: idea.trim() || imageName || 'Ide dari gambar', emoji_count: item.emoji_count });
       postedIds.add(item.id);
       setPostedIds(new Set(postedIds));
     } catch (e: any) {
@@ -64,7 +94,7 @@ export default function Ideas({ onTabChange }: Props) {
     const sel = ideas.filter(i => selected.has(i.id) && !postedIds.has(i.id));
     for (const item of sel) {
       setPosting(item.id);
-      insertPost({ content: item.content, topic: idea.trim(), emoji_count: item.emoji_count });
+      insertPost({ content: item.content, topic: idea.trim() || imageName || 'Ide dari gambar', emoji_count: item.emoji_count });
       postedIds.add(item.id);
       setPostedIds(new Set(postedIds));
       await new Promise(r => setTimeout(r, 500));
@@ -105,10 +135,24 @@ export default function Ideas({ onTabChange }: Props) {
               onKeyDown={e => e.key === 'Enter' && handleGenerate()}
               placeholder="Contoh: quantum computing, AI ethics, remote work..."
               className="input text-base py-4 pl-4 pr-12" />
-            <button onClick={handleGenerate} disabled={loading || !idea.trim()}
+            <button onClick={handleGenerate} disabled={loading || (!idea.trim() && !imageData)}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#4f46e5] flex items-center justify-center text-lg text-white transition-all hover:scale-105 disabled:opacity-30 shadow-lg shadow-[#6366f1]/20">
               {loading ? <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> : '→'}
             </button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <label className="btn-outline text-xs cursor-pointer inline-flex items-center gap-2">
+              📷 Tambah gambar JPG
+              <input type="file" accept="image/jpeg,.jpg,.jpeg" onChange={handleImageChange} className="hidden" />
+            </label>
+            {imageData && (
+              <div className="flex items-center gap-2 rounded-xl border border-[#1e1e4a] bg-[#0d0d25] px-2 py-1.5">
+                <img src={imageData} alt="Preview gambar" className="h-10 w-10 rounded-lg object-cover" />
+                <span className="max-w-[180px] truncate text-xs text-[#9494b8]">{imageName}</span>
+                <button type="button" onClick={clearImage} className="text-xs text-[#f87171]" title="Hapus gambar">×</button>
+              </div>
+            )}
+            <span className="text-[11px] text-[#666680]">Model vision akan membaca gambar untuk menyesuaikan ide posting.</span>
           </div>
         </div>
 
