@@ -38,6 +38,7 @@ function hasZeroPricingMetadata(item) {
 
 const CURATED_MODEL_IDS = [
   'agnes-2.5-flash:free',
+  'grok-4.7-fast:free',
   'gemini-3.8-flash:free',
   'qwen3-8-omni-flash:free',
   'beam-1.0:free',
