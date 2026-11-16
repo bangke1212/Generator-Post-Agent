@@ -4,10 +4,12 @@ import Header from './components/Header';
 import Ideas from './pages/Ideas';
 import Generate from './pages/Generate';
 import Settings from './pages/Settings';
+import ImageGenerate from './pages/ImageGenerate';
 
 const navItems = [
   { key: 'ideas', label: 'Idea Studio', caption: 'Multi-variant posts', icon: '✦' },
   { key: 'generate', label: 'Quick Generate', caption: 'One polished post', icon: '↗' },
+  { key: 'images', label: 'Text to Image', caption: 'AI image generation', icon: '🎨' },
   { key: 'settings', label: 'AI Providers', caption: 'Keys & models', icon: '⌘' },
 ];
 
@@ -15,7 +17,7 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const activeTab = location.pathname.includes('settings') ? 'settings' : location.pathname.includes('generate') ? 'generate' : 'ideas';
+  const activeTab = location.pathname.includes('settings') ? 'settings' : location.pathname.includes('images') ? 'images' : location.pathname.includes('generate') ? 'generate' : 'ideas';
 
   const onTabChange = (tab: string) => {
     navigate(tab === 'ideas' ? '/' : `/${tab}`);
@@ -55,6 +57,7 @@ export default function App() {
             <Route path="/" element={<Ideas onTabChange={onTabChange} />} />
             <Route path="/ideas" element={<Ideas onTabChange={onTabChange} />} />
             <Route path="/generate" element={<Generate onTabChange={onTabChange} />} />
+            <Route path="/images" element={<ImageGenerate onTabChange={onTabChange} />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Ideas onTabChange={onTabChange} />} />
           </Routes>
