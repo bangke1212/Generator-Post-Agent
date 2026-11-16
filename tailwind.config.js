@@ -4,14 +4,45 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#6366f1',
-        'primary-light': '#818cf8',
-        'primary-dark': '#4f46e5',
-        accent: '#06b6d4',
-        'accent-light': '#22d3ee',
-        dark: '#0a0a1a',
-        'dark-card': '#111133',
-        'dark-elevated': '#161644',
+        ink: {
+          DEFAULT: '#0A0E13',
+          panel: '#111823',
+          raised: '#161F2C',
+          input: '#0D131C',
+          rail: '#0C1118',
+        },
+        paper: '#EDEFF2',
+        fog: '#9AA7B8',
+        mist: '#64748B',
+        line: {
+          DEFAULT: '#1E2937',
+          strong: '#2C3B4E',
+        },
+        signal: {
+          DEFAULT: '#2DD4A7',
+          ink: '#06281F',
+          soft: '#5EE6C0',
+        },
+        // Kunci lama dipertahankan agar class yang masih memakainya tetap jalan,
+        // nilainya dipetakan ke palet baru (bukan lagi indigo/cyan generik).
+        primary: '#EDEFF2',
+        'primary-light': '#FFFFFF',
+        'primary-dark': '#C7CDD6',
+        accent: '#2DD4A7',
+        'accent-light': '#5EE6C0',
+        dark: '#0A0E13',
+        'dark-card': '#111823',
+        'dark-elevated': '#161F2C',
+      },
+      fontFamily: {
+        display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
+      borderRadius: {
+        card: '12px',
+        control: '8px',
+        tag: '6px',
       },
     },
   },

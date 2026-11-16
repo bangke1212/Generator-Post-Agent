@@ -28,19 +28,17 @@ export default function App() {
 
   return (
     <div className="app-frame">
-      <div className="ambient-orb ambient-orb-one" />
-      <div className="ambient-orb ambient-orb-two" />
       <aside className={`workspace-rail ${mobileOpen ? 'is-open' : ''}`}>
         <div className="rail-brand">
           <div className="brand-orbit"><span>✦</span></div>
-          <div><strong>PostPilot</strong><small>AI CONTENT STUDIO</small></div>
+          <div><strong>PostPilot</strong><small>AI content studio</small></div>
           <button className="rail-close" onClick={() => setMobileOpen(false)} aria-label="Tutup menu">×</button>
         </div>
 
         <div className="rail-status"><span className="live-dot" /><div><strong>AI workspace ready</strong><small>Local session · v4.0</small></div></div>
-        <p className="rail-label">WORKSPACE</p>
+        <p className="rail-label">Workspace</p>
         <nav className="rail-nav">
-          {navItems.map(item => <button key={item.key} onClick={() => onTabChange(item.key)} className={activeTab === item.key ? 'active' : ''}>
+          {navItems.map(item => <button key={item.key} onClick={() => onTabChange(item.key)} className={activeTab === item.key ? 'active' : ''} aria-current={activeTab === item.key ? 'page' : undefined}>
             <span className="nav-icon">{item.icon}</span><span><b>{item.label}</b><small>{item.caption}</small></span>{activeTab === item.key && <i>•</i>}
           </button>)}
         </nav>
