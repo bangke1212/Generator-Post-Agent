@@ -42,7 +42,9 @@ export const CROWLLM_FREE_MODELS: ModelConfig[] = [
   { id: 'crow/auto:free', name: 'Crow Auto Free', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Router otomatis ke model free yang tersedia.' },
   { id: 'minimax-m3.1-flash:free', name: 'MiniMax M3.1 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
   { id: 'muse-spark-1.1:free', name: 'Muse Spark 1.1', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'nemotron-3.5-super-vl:free', name: 'NVIDIA Nemotron 3.5 Super VL', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'vision', 'multimodal'], bestFor: 'Chat dan analisis gambar/video.' },
   { id: 'nvidia/nemotron-3.5-bolt-e4b:free', name: 'NVIDIA Nemotron 3.5 Bolt E4B', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'nvidia/nemotron-3.5-super-vl-120b-a12b:free', name: 'NVIDIA Nemotron 3.5 Super VL 120B A12B', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'vision', 'multimodal'], bestFor: 'Analisis visual multimodal dengan model besar.' },
   { id: 'deepseek-v4.1-flash-uncensored:free', name: 'DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat dengan output tanpa penyaring tertentu; tinjau hasilnya.' },
 ];
 

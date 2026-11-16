@@ -49,7 +49,9 @@ const CURATED_MODEL_IDS = [
   'crow/auto:free',
   'minimax-m3.1-flash:free',
   'muse-spark-1.1:free',
+  'nemotron-3.5-super-vl:free',
   'nvidia/nemotron-3.5-bolt-e4b:free',
+  'nvidia/nemotron-3.5-super-vl-120b-a12b:free',
   'deepseek-v4.1-flash-uncensored:free',
 ];
 const CURATED_MODEL_ID_SET = new Set(CURATED_MODEL_IDS);
