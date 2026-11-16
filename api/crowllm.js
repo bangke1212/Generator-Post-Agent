@@ -267,6 +267,14 @@ export default async function handler(req, res) {
   }
 
   const { action, apiKey, model, prompt, imageData, videoUrl, maxTokens, temperature } = req.body || {};
+  if (action === 'resolve_video') {
+    if (typeof videoUrl !== 'string' || !/^https?:\/\//i.test(videoUrl)) {
+      return res.status(400).json({ error: { message: 'URL video tidak valid.' } });
+    }
+    const resolved = await resolveXVideo(videoUrl);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ videoUrl: resolved.url, text: resolved.text });
+  }
   if (typeof apiKey !== 'string' || !apiKey.trim()) {
     return res.status(400).json({ error: { message: 'API Key CrowLLM belum diisi.' } });
   }

@@ -216,6 +216,25 @@ export function getModelProfile(provider: string, model: string): ModelConfig | 
   return preset.models.find(x => x.id === model) || null;
 }
 
+async function resolveVideoForProvider(videoUrl: string, prompt: string): Promise<{ videoUrl: string; prompt: string }> {
+  try {
+    const response = await fetch('/api/crowllm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'resolve_video', videoUrl }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    return {
+      videoUrl: typeof payload?.videoUrl === 'string' && payload.videoUrl ? payload.videoUrl : videoUrl,
+      prompt: typeof payload?.text === 'string' && payload.text.trim()
+        ? `${prompt}\n\nKONTEKS TEKS POST X: ${payload.text}`
+        : prompt,
+    };
+  } catch {
+    return { videoUrl, prompt };
+  }
+}
+
 export async function callAI(params: GenerateParams): Promise<{ content: string; provider: string; model: string }> {
   const { provider, apiKey, baseUrl, model, prompt, imageData, videoUrl, maxTokens, temperature } = params;
 
@@ -226,6 +245,7 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
   if (!endpoint) throw new Error('Base URL tidak diatur untuk ' + provider);
 
   const optimal = getModelParams(provider, model);
+  const resolved = videoUrl ? await resolveVideoForProvider(videoUrl, prompt) : { videoUrl: '', prompt };
 
   // CrowLLM is called through a same-origin Vercel function to avoid browser CORS failures.
   if (provider === 'crowllm') {
@@ -238,9 +258,9 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
           action: 'chat',
           apiKey,
           model,
-          prompt,
+          prompt: resolved.prompt,
           imageData,
-          videoUrl,
+          videoUrl: resolved.videoUrl,
           maxTokens: maxTokens || optimal.maxTokens,
           temperature: temperature ?? optimal.temperature,
         }),
@@ -276,7 +296,8 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
         body: JSON.stringify({
           apiKey,
           model,
-          prompt,
+          prompt: resolved.prompt,
+          videoUrl: resolved.videoUrl,
           maxTokens: maxTokens || optimal.maxTokens,
           temperature: temperature ?? optimal.temperature,
         }),
@@ -309,13 +330,13 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     dangerouslyAllowBrowser: true,
   });
 
-  const messageContent: any = imageData || videoUrl
+  const messageContent: any = imageData || resolved.videoUrl
     ? [
         ...(imageData ? [{ type: 'image_url', image_url: { url: imageData } }] : []),
-        ...(videoUrl ? [{ type: 'video_url', video_url: { url: videoUrl } }] : []),
-        { type: 'text', text: prompt },
+        ...(resolved.videoUrl ? [{ type: 'video_url', video_url: { url: resolved.videoUrl } }] : []),
+        { type: 'text', text: resolved.prompt },
       ]
-    : prompt;
+    : resolved.prompt;
 
   const res = await openai.chat.completions.create({
     model,
