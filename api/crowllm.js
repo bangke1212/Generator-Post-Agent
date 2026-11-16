@@ -276,20 +276,37 @@ async function getImageModels(apiKey) {
   catch { throw new Error('CrowLLM /v1/models returned invalid JSON.'); }
   if (!response.ok) throw new Error(payload?.error?.message || 'CrowLLM models request failed (HTTP ' + response.status + ').');
 
-  const rows = Array.isArray(payload?.data) ? payload.data : [];
+  const rows = Array.isArray(payload?.data) ? payload.data.filter(item => typeof item?.id === 'string' && item.id.trim()) : [];
   const isImageEndpoint = value => /image|text[-_ ]?to[-_ ]?image/i.test(String(value || ''));
-  const models = rows.filter(item => {
-    const endpoints = Array.isArray(item?.supported_endpoint_types) ? item.supported_endpoint_types : [];
-    return endpoints.some(isImageEndpoint);
-  }).map(item => ({
+  const getEndpointTypes = item => Array.isArray(item?.supported_endpoint_types)
+    ? item.supported_endpoint_types
+    : typeof item?.supported_endpoint_types === 'string' ? [item.supported_endpoint_types] : [];
+  const toModel = item => ({
     id: item.id,
     name: item.name || item.id,
     free: item.id.endsWith(':free') || hasZeroPricingMetadata(item),
-  }));
+  });
+
+  let models = rows.filter(item => getEndpointTypes(item).some(isImageEndpoint)).map(toModel);
+
+  // Some catalogue responses omit endpoint metadata. Only then inspect model
+  // detail pages for an explicit image endpoint; never infer from the model name.
+  if (!models.length) {
+    const orderedRows = [...rows].sort((a, b) =>
+      Number(isImageEndpoint(a.id)) - Number(isImageEndpoint(b.id))
+    ).slice(0, 48);
+    const pages = await mapWithConcurrency(orderedRows, 12, fetchModelPage);
+    const imageIds = new Set(pages.filter(page => {
+      if (!page?.html) return false;
+      const text = htmlText(page.html);
+      const endpointLabel = text.match(/Endpoints\\s+([a-z0-9,\\s-]{1,120})/i)?.[1] || '';
+      return /\\/v1\\/images\\/generations/i.test(page.html) || isImageEndpoint(endpointLabel);
+    }).map(page => page.id));
+    models = rows.filter(item => imageIds.has(item.id)).map(toModel);
+  }
 
   return { models, checkedAt: new Date().toISOString() };
 }
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
