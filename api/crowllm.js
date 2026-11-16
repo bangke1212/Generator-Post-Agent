@@ -53,6 +53,7 @@ const CURATED_MODEL_IDS = [
   'nemotron-3.5-super-vl:free',
   'nvidia/nemotron-3.5-bolt-e4b:free',
   'nvidia/nemotron-3.5-super-vl-120b-a12b:free',
+  'deepseek-v4-flash-uncensored:free',
   'deepseek-v4.1-flash-uncensored:free',
 ];
 const CURATED_MODEL_ID_SET = new Set(CURATED_MODEL_IDS);
@@ -329,6 +330,57 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: { message: 'API Key CrowLLM belum diisi.' } });
   }
 
+
+  if (action === 'enhance_image_prompt') {
+    if (typeof model !== 'string' || !model.trim()) {
+      return res.status(400).json({ error: { message: 'Pilih model chat untuk menyusun prompt.' } });
+    }
+    if (typeof prompt !== 'string' || !prompt.trim()) {
+      return res.status(400).json({ error: { message: 'Tulis ide gambar terlebih dahulu.' } });
+    }
+    try {
+      const upstream = await fetch(CROWLLM + '/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + apiKey.trim(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model.trim(),
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert text-to-image prompt writer. Turn the user idea into one detailed, visually precise image-generation prompt. Preserve the user\'s intent and subject. Add useful composition, lighting, camera or art-direction details only when appropriate. Do not add explanations, labels, quotation marks, or markdown. Return only the final prompt.',
+            },
+            { role: 'user', content: prompt.trim() },
+          ],
+          temperature: 0.7,
+          max_tokens: 700,
+          stream: false,
+        }),
+        signal: AbortSignal.timeout(52000),
+      });
+      const body = await upstream.text();
+      if (!upstream.ok) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        return res.status(upstream.status).send(body);
+      }
+      let payload;
+      try { payload = JSON.parse(body); }
+      catch { throw new Error('Respons model chat bukan JSON yang valid.'); }
+      const enhancedPrompt = payload?.choices?.[0]?.message?.content;
+      if (typeof enhancedPrompt !== 'string' || !enhancedPrompt.trim()) {
+        throw new Error('Model chat tidak mengembalikan prompt.');
+      }
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json({ prompt: enhancedPrompt.trim(), model: model.trim() });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown upstream error';
+      return res.status(502).json({
+        error: { message: 'Gagal menyusun prompt melalui CrowLLM: ' + message },
+      });
+    }
+  }
 
   if (action === 'image_models') {
     try {
