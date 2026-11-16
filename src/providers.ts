@@ -31,6 +31,7 @@ export interface ProviderConfig {
 
 export const CROWLLM_FREE_MODELS: ModelConfig[] = [
   { id: 'agnes-2.5-flash:free', name: 'Agnes 2.5 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
+  { id: 'gemini-3.8-flash:free', name: 'Gemini 3.8 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'multilingual', 'vision'], bestFor: 'Chat, multilingual, dan analisis gambar.' },
   { id: 'qwen3-8-omni-flash:free', name: 'Qwen3 8 Omni Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'multilingual', 'multimodal'], bestFor: 'Chat cepat dan multilingual.' },
   { id: 'beam-1.0:free', name: 'Beam 1.0', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
   { id: 'caw/glm-5.3-flash:free', name: 'GLM 5.3 Flash', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
