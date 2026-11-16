@@ -123,20 +123,20 @@ export default function ImageGenerate({ onTabChange }: Props) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🎨</span> Text to Image</h2>
-          <p className="text-sm text-[#91a0b5] mt-1">Buat gambar dari prompt menggunakan model image CrowLLM.</p>
+          <p className="text-sm text-[#475569] mt-1">Buat gambar dari prompt menggunakan model image CrowLLM.</p>
         </div>
         <button onClick={() => onTabChange('settings')} className="btn-ghost text-sm">⚙ AI Providers</button>
       </div>
 
       <section className="card-glow space-y-4">
         {!apiKey && (
-          <div className="rounded-xl border border-[#f2b96b]/30 bg-[#f2b96b]/5 p-3 text-sm text-[#f2b96b]">
+          <div className="rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/5 p-3 text-sm text-[#B45309]">
             API Key CrowLLM belum ditemukan. Simpan API key CrowLLM di halaman AI Providers terlebih dahulu.
           </div>
         )}
         <div>
           <div className="flex items-center justify-between gap-3 mb-2">
-            <label className="text-[11px] font-semibold text-[#91a0b5] uppercase tracking-wider">Model gambar</label>
+            <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider">Model gambar</label>
             <button type="button" onClick={loadModels} disabled={!apiKey || loadingModels} className="btn-outline text-xs py-2 px-3">
               {loadingModels ? 'Memuat katalog...' : '↻ Muat model'}
             </button>
@@ -145,11 +145,11 @@ export default function ImageGenerate({ onTabChange }: Props) {
             {!models.length && <option value="">Belum ada model image</option>}
             {models.map(item => <option key={item.id} value={item.id}>{item.id}{item.free ? ' · Free' : ''}</option>)}
           </select>
-          <p className="text-[11px] text-[#66758a] mt-2">Daftar hanya menampilkan model yang katalog CrowLLM tandai mendukung endpoint image generation. Model berbayar dapat menimbulkan biaya sesuai tarif akun.</p>
+          <p className="text-[11px] text-[#64748b] mt-2">Daftar hanya menampilkan model yang katalog CrowLLM tandai mendukung endpoint image generation. Model berbayar dapat menimbulkan biaya sesuai tarif akun.</p>
         </div>
 
         <div>
-          <label className="text-[11px] font-semibold text-[#91a0b5] uppercase tracking-wider block mb-2">Model penyusun prompt (DeepSeek)</label>
+          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block mb-2">Model penyusun prompt (DeepSeek)</label>
           <div className="flex gap-2">
             <select value={promptModel} onChange={event => setPromptModel(event.target.value)} disabled={!promptModels.length || loadingModels} className="input flex-1">
               {!promptModels.length && <option value="">Model DeepSeek belum tersedia</option>}
@@ -159,18 +159,18 @@ export default function ImageGenerate({ onTabChange }: Props) {
               {enhancing ? 'Menyusun...' : '✨ Perbaiki prompt'}
             </button>
           </div>
-          <p className="text-[11px] text-[#66758a] mt-2">DeepSeek hanya menyusun prompt melalui endpoint chat. Model ini tidak digunakan untuk membuat file gambar.</p>
+          <p className="text-[11px] text-[#64748b] mt-2">DeepSeek hanya menyusun prompt melalui endpoint chat. Model ini tidak digunakan untuk membuat file gambar.</p>
         </div>
 
         <div>
-          <label className="text-[11px] font-semibold text-[#91a0b5] uppercase tracking-wider block mb-2">Prompt gambar</label>
+          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block mb-2">Prompt gambar</label>
           <textarea value={prompt} onChange={event => setPrompt(event.target.value)} rows={5}
             placeholder="Contoh: A cinematic editorial photo of a futuristic Jakarta skyline at golden hour, ultra detailed, natural lighting..."
             className="input resize-y" />
         </div>
 
         <div className="max-w-xs">
-          <label className="text-[11px] font-semibold text-[#91a0b5] uppercase tracking-wider block mb-2">Ukuran gambar</label>
+          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block mb-2">Ukuran gambar</label>
           <select value={size} onChange={event => setSize(event.target.value)} className="input">
             <option value="1024x1024">Persegi · 1024 × 1024</option>
             <option value="1024x1536">Portrait · 1024 × 1536</option>
@@ -183,18 +183,18 @@ export default function ImageGenerate({ onTabChange }: Props) {
         </button>
       </section>
 
-      {error && <div className="card border-[#ef4444]/30 bg-[#ef4444]/5"><p className="text-sm text-[#f87171] whitespace-pre-wrap">{error}</p></div>}
+      {error && <div className="card border-[#ef4444]/30 bg-[#ef4444]/5"><p className="text-sm text-[#DC2626] whitespace-pre-wrap">{error}</p></div>}
 
-      {generating && <div className="card text-center py-12 space-y-3"><div className="text-4xl animate-pulse">🎨</div><p className="text-sm text-[#91a0b5]">Model sedang membuat gambar. Proses ini bisa memerlukan waktu.</p></div>}
+      {generating && <div className="card text-center py-12 space-y-3"><div className="text-4xl animate-pulse">🎨</div><p className="text-sm text-[#475569]">Model sedang membuat gambar. Proses ini bisa memerlukan waktu.</p></div>}
 
       {imageUrl && (
         <section className="card-glow space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div><h3 className="font-semibold">Hasil gambar</h3><p className="text-[11px] text-[#91a0b5] mt-1">{resultModel}</p></div>
+            <div><h3 className="font-semibold">Hasil gambar</h3><p className="text-[11px] text-[#475569] mt-1">{resultModel}</p></div>
             <a href={imageUrl} download="crowllm-generated-image.png" target="_blank" rel="noreferrer" className="btn-outline text-xs">⬇ Buka / Simpan gambar</a>
           </div>
-          <img src={imageUrl} alt="Hasil gambar dari CrowLLM" className="w-full max-h-[760px] object-contain rounded-xl border border-[#263448] bg-[#0b121e]" />
-          {revisedPrompt && <p className="text-xs text-[#91a0b5]">Prompt hasil revisi model: {revisedPrompt}</p>}
+          <img src={imageUrl} alt="Hasil gambar dari CrowLLM" className="w-full max-h-[760px] object-contain rounded-xl border border-[#CBD5E1] bg-[#F8FAFC]" />
+          {revisedPrompt && <p className="text-xs text-[#475569]">Prompt hasil revisi model: {revisedPrompt}</p>}
           <button onClick={generate} disabled={generating} className="btn-outline w-full">↻ Generate ulang</button>
         </section>
       )}

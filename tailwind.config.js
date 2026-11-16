@@ -4,14 +4,56 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#6366f1',
-        'primary-light': '#818cf8',
-        'primary-dark': '#4f46e5',
-        accent: '#06b6d4',
-        'accent-light': '#22d3ee',
-        dark: '#0a0a1a',
-        'dark-card': '#111133',
-        'dark-elevated': '#161644',
+        // v2 cerah: kertas hangat + putih bersih, teks tinta kontras tinggi.
+        // Aksen: biru X (#1D9BF0) untuk brand/nav/aksi, oranye hangat
+        // (#F97316) hanya untuk CTA Generate, hijau hanya untuk sukses.
+        ink: {
+          DEFAULT: '#0F172A',
+          panel: '#FFFFFF',
+          raised: '#F8FAFC',
+          input: '#FFFFFF',
+          rail: '#FFFFFF',
+        },
+        paper: '#0F172A',
+        fog: '#475569',
+        mist: '#64748B',
+        line: {
+          DEFAULT: '#E7E5E0',
+          strong: '#CBD5E1',
+        },
+        signal: {
+          DEFAULT: '#1D9BF0',
+          ink: '#FFFFFF',
+          soft: '#E8F4FD',
+        },
+        warm: {
+          DEFAULT: '#F97316',
+          ink: '#FFFFFF',
+          soft: '#FFF1E6',
+        },
+        success: '#059669',
+        danger: '#DC2626',
+        warning: '#B45309',
+        // Kunci lama dipertahankan agar class yang masih memakainya tetap
+        // jalan; nilainya dipetakan ke palet cerah v2.
+        primary: '#1D9BF0',
+        'primary-light': '#4FB3F6',
+        'primary-dark': '#1A8CD8',
+        accent: '#F97316',
+        'accent-light': '#FFF1E6',
+        dark: '#0F172A',
+        'dark-card': '#FFFFFF',
+        'dark-elevated': '#F8FAFC',
+      },
+      fontFamily: {
+        display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
+      borderRadius: {
+        card: '12px',
+        control: '8px',
+        tag: '6px',
       },
     },
   },
