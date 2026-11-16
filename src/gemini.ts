@@ -57,8 +57,17 @@ function removeBotStyle(text: string): string {
   return result.replace(/ {2,}/g, ' ').replace(/^\n+/, '').replace(/\n+$/, '').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+function removeModelPreamble(text: string): string {
+  let result = text.trim();
+  // Models sometimes ignore the format and introduce themselves before the tweet.
+  result = result.replace(/^(?:(?:halo|hai|hello)[^\n]*|perkenalkan[^\n]*|\d+(?:\.\d+)?\s+flash\.?|saya akan (?:membuatkan|menulis|memberikan)[^\n]*)\s*/i, '');
+  result = result.replace(/^(?:\s*(?:8\s+flash\.?|saya akan (?:membuatkan|menulis|memberikan)[^\n]*))+/i, '');
+  return result.trim();
+}
+
 function postProcess(text: string): string {
-  let t = ensureParagraphSpacing(text);
+  let t = removeModelPreamble(text);
+  t = ensureParagraphSpacing(t);
   t = removeBotStyle(t);
   return ensureParagraphSpacing(t);
 }
@@ -292,6 +301,8 @@ ${ALGO_ANTI_PENALTY}
 (dan seterusnya)
 
 ⚠️ SETIAP TWEET HARUS:
+- LANGSUNG mulai dengan isi tweet. JANGAN memberi salam, pengantar, penjelasan, atau kalimat seperti "Saya akan...".
+- JANGAN menyebut nama model, Gemini, AI, asisten, prompt, URL, link, atau proses analisis.
 - 120-150 kata (padat, berbobot)
 - Hook berbeda (random dari 8 hook types)
 - Emoji emosi yang match (ikut EMOJI QUALITY GUIDE)
