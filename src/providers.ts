@@ -185,9 +185,9 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     docs: 'https://numes.ai/dashboard/keys',
     rateLimitNote: '✅ GRATIS! Model uncensored gratis di Numes. Buat API key di numes.ai/dashboard/keys (mata uang USD). Dipanggil lewat proxy Vercel /api/numes karena Numes menolak request browser langsung.',
     models: [
-      { id: 'glm-5.3-uncensored', name: '🆓 GLM 5.3 Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
-      { id: 'glm-5.3-flash-uncensored', name: '🆓 GLM 5.3 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast'], bestFor: 'Versi cepat GLM 5.3 uncensored; tinjau hasilnya.' },
-      { id: 'deepseek-v4.1-flash-uncensored', name: '🆓 DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+      { id: 'z-ai/glm-5.3-uncensored', name: '🆓 GLM 5.3 Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+      { id: 'z-ai/glm-5.3-flash-uncensored', name: '🆓 GLM 5.3 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast'], bestFor: 'Versi cepat GLM 5.3 uncensored; tinjau hasilnya.' },
+      { id: 'deepseek/deepseek-v4.1-flash-uncensored', name: '🆓 DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
     ],
   },
   custom: {
