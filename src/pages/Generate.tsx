@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { generateContent } from '../gemini';
+import { generateContent, tweetLength, TWEET_CHAR_LIMIT } from '../gemini';
 import { insertPost } from '../store';
 
 interface Props { onTabChange: (tab: string) => void; }
@@ -70,7 +70,7 @@ export default function Generate({ onTabChange }: Props) {
           <div className="flex items-center gap-2">
             <span className="badge badge-info text-[10px]">{result.topic}</span>
             {result.provider && <span className="text-[10px] text-[#64748b]">via {result.provider}</span>}
-            <span className="ml-auto text-xs text-[#64748b]">~{result.content.split(/\s+/).length} kata</span>
+            <span className={`ml-auto text-xs ${tweetLength(result.content) > TWEET_CHAR_LIMIT ? 'text-[#DC2626] font-semibold' : 'text-[#64748b]'}`}>{tweetLength(result.content)}/{TWEET_CHAR_LIMIT} karakter</span>
           </div>
           <div className="bg-[#F8FAFC] rounded-2xl p-5 border border-[#E2E8F0] relative group">
             <p className="text-sm leading-[1.8] whitespace-pre-wrap text-[#1F2937]">{result.content}</p>

@@ -14,32 +14,73 @@ export interface GeneratedIdea {
   hook_type?: string;
 }
 
-function ensureParagraphSpacing(text: string): string {
-  if (!text) return text;
-  let result = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  result = result.replace(/\n{3,}/g, '\n\n');
-  if (!result.includes('\n\n')) {
-    const sentences = result.match(/[^.!?\n]+[.!?]+\s*/g);
-    if (sentences && sentences.length >= 3) {
-      const paragraphs: string[] = [];
-      const pp = Math.ceil(sentences.length / 3);
-      for (let i = 0; i < sentences.length; i += pp) paragraphs.push(sentences.slice(i, i + pp).join('').trim());
-      result = paragraphs.join('\n\n');
-    }
+// ── Batas kolom Twitter/X ─────────────────────────────────────────────
+// Akun biasa hanya punya 280 karakter per post/reply. Twitter menghitung
+// emoji & karakter CJK sebagai 2; fungsi ini meniru pembobotan itu secara
+// konservatif (selector/ZWJ ikut terhitung, jadi hasil tidak pernah kurang
+// dari hitungan Twitter — selalu aman).
+export const TWEET_CHAR_LIMIT = 280;
+
+export function tweetLength(text: string): number {
+  let n = 0;
+  for (const ch of text) {
+    const cp = ch.codePointAt(0) || 0;
+    const wide = cp > 0xFFFF
+      || (cp >= 0x1100 && cp <= 0x11FF)
+      || (cp >= 0x2E80 && cp <= 0x9FFF)
+      || (cp >= 0xA000 && cp <= 0xA4CF)
+      || (cp >= 0xAC00 && cp <= 0xD7A3)
+      || (cp >= 0xF900 && cp <= 0xFAFF)
+      || (cp >= 0xFE30 && cp <= 0xFE4F)
+      || (cp >= 0xFF00 && cp <= 0xFF60)
+      || (cp >= 0x20000 && cp <= 0x2FFFD)
+      || (cp >= 0x30000 && cp <= 0x3FFFD);
+    n += wide ? 2 : 1;
   }
-  const paragraphs = result.split(/\n\n+/).map(p => p.trim()).filter(p => p.length > 0);
-  if (paragraphs.length === 1 && paragraphs[0].length > 200) {
-    const parts: string[] = [];
-    let cur = '';
-    for (const word of paragraphs[0].split(' ')) {
-      cur += (cur ? ' ' : '') + word;
-      if (cur.length > 100 && /[.!?]$/.test(word)) { parts.push(cur.trim()); cur = ''; }
-    }
-    if (cur.trim()) parts.push(cur.trim());
-    if (parts.length > 1) return parts.join('\n\n');
-  }
-  return paragraphs.join('\n\n');
+  return n;
 }
+
+// Pangkas teks agar muat di kolom Twitter tanpa memotong di tengah kalimat.
+// Prioritas: kalimat utuh dari awal; kalimat tanya terakhir (reply bait)
+// dipertahankan bila muat; terakhir potong di batas kata.
+export function fitToTweetLimit(text: string, limit: number = TWEET_CHAR_LIMIT): string {
+  const clean = text.replace(/\n{3,}/g, '\n\n').trim();
+  if (tweetLength(clean) <= limit) return clean;
+
+  const flat = clean.replace(/\s*\n+\s*/g, ' ').replace(/ {2,}/g, ' ').trim();
+  const sentences = flat.match(/[^.!?…]+[.!?…]+["')\]]*\s*|[^.!?…]+$/g)?.map(s => s.trim()).filter(Boolean) || [flat];
+
+  let out = '';
+  for (const s of sentences) {
+    const cand = out ? `${out} ${s}` : s;
+    if (tweetLength(cand) > limit) break;
+    out = cand;
+  }
+  // Pertahankan reply bait: kalimat tanya terakhir yang belum ikut.
+  const lastQ = [...sentences].reverse().find(s => s.includes('?'));
+  if (lastQ && out && !out.includes(lastQ)) {
+    const cand = `${out} ${lastQ}`;
+    if (tweetLength(cand) <= limit) out = cand;
+  }
+  if (out && tweetLength(out) >= 60) return out.trim();
+
+  let cut = '';
+  for (const w of flat.split(' ')) {
+    const cand = cut ? `${cut} ${w}` : w;
+    if (tweetLength(cand) > limit) break;
+    cut = cand;
+  }
+  return cut.replace(/[\s,;:.!?…-]+$/u, '').trim();
+}
+
+const LENGTH_RULE = `
+📏 ATURAN PANJANG — WAJIB, TIDAK BISA DITAWAR:
+- Maksimal 280 KARAKTER per tweet/reply (batas kolom Twitter/X akun biasa). Hitung KARAKTER, bukan kata.
+- Target aman: 200–260 karakter total (sekitar 30–45 kata). Lebih pendek lebih baik daripada kepanjangan.
+- Cukup 1 paragraf ringkas: 1–3 kalimat padat + reply bait singkat di akhir. BUKAN esai, BUKAN 3 paragraf.
+- Emoji dihitung 2 karakter oleh Twitter — pakai 2–4 emoji saja.
+- Output yang melebihi 280 karakter akan DIPOTONG otomatis oleh sistem dan bisa kehilangan reply bait-mu.
+`;
 
 const BOT_PATTERNS: Array<{ p: RegExp; r: string | ((_: string, p1: string, p2: string) => string) }> = [
   { p: /\b(Tahukah kamu bahwa|Perlu diketahui bahwa|Di era modern ini,|Pada hakikatnya,|Marilah kita|Patut kita|Sudah sepatutnya)\s*/gi, r: '' },
@@ -74,9 +115,9 @@ function removeModelPreamble(text: string): string {
 
 function postProcess(text: string): string {
   let t = removeModelPreamble(text);
-  t = ensureParagraphSpacing(t);
   t = removeBotStyle(t);
-  return ensureParagraphSpacing(t);
+  // Tanpa pemisah paragraf ala esai: balasan harus ringkas dan muat 280 karakter.
+  return fitToTweetLimit(t);
 }
 
 const EMOJI_QUALITY_GUIDE = `
@@ -97,9 +138,8 @@ EMOSI → EMOJI MAPPING (WAJIB IKUTI):
 
 ATURAN PAKAI EMOJI:
 - Pertama karakter = emoji yang SET MOOD
-- Awal paragraf = emoji transisi yang nyambung
 - Jangan spam emoji sama berulang
-- Maks 7 emoji total dalam 1 tweet
+- Maks 4 emoji total dalam 1 tweet (emoji dihitung 2 karakter oleh Twitter)
 - Emoji harus mendukung emosi teks, bukan dekorasi kosong
 
 🚫 EMOJI DILARANG: ✅ ❌ 👉 👇 ‼️ 💯 🔴 🟢 🟡 ⬇️ ⬆️ ➡️
@@ -129,9 +169,8 @@ SELALU AKHIRI DENGAN:
 const EMOJI_RULES = `
 🎭 EMOJI SYSTEM:
 - Karakter PERTAMA tweet = emoji yg SET MOOD
-- Tiap awal paragraf = emoji transisi
 - Emosi & emoji harus MATCH (ikut EMOJI QUALITY GUIDE)
-- Maks 7 emoji total, minimal 4 emoji
+- Maks 4 emoji total, minimal 1 (format pendek — hemat karakter)
 - NO: ✅ ❌ 👉 👇 ‼️ 💯 🔴 🟢 🟡
 `;
 
@@ -179,10 +218,10 @@ function getPerModelConstraints(provider: string, model: string): string {
   if (!profile) return '';
   const constraints: string[] = [];
   if (profile.maxTokens <= 500) {
-    constraints.push('⚠️ Kamu model compact: tweet 120-150 kata saja. Langsung to the point dan padat.');
+    constraints.push('⚠️ Kamu model compact: langsung to the point. Maksimal 260 karakter, 1-2 kalimat + reply bait.');
   }
   if (profile.maxTokens >= 800) {
-    constraints.push('✅ Kamu model besar: boleh elaborate. Target 120-150 kata.');
+    constraints.push('✅ Kamu model besar: tetap ringkas. Maksimal 260 karakter — padat, jangan bertele-tele.');
   }
   return constraints.length ? `\n🔧 MODEL CONSTRAINTS:\n${constraints.join('\n')}\n` : '';
 }
@@ -218,13 +257,13 @@ ${VIRAL_HOOK_STRATEGY}
 ${ALGO_REPLY_BAIT}
 ${EMOJI_RULES}
 ${ALGO_ANTI_PENALTY}
+${LENGTH_RULE}
 ${MODEL_OUTPUT_GUARD}
 
 ✅ FORMAT OUTPUT:
 - EMOJI sebagai karakter pertama (wajib)
-- 2-3 paragraf pendek
-- Tiap paragraf diawali emoji yang nyambung
-- TARGET PANJANG: 120-150 kata total
+- 1 paragraf ringkas (1-3 kalimat), tanpa jeda paragraf ala esai
+- TARGET PANJANG: 200-260 KARAKTER total (sekitar 30-45 kata) — maks 280 karakter
 - Akhiri dengan REPLY BAIT natural
 - Personal voice: "gue/aku" (atau "I" untuk English)
 
@@ -234,7 +273,7 @@ ${MODEL_OUTPUT_GUARD}
 - HARUS ada opini personal yang tajam
 - HARUS menggunakan emoji yang match emosi
 - Tone harus konsisten di seluruh tweet
-- JANGAN lebih pendek dari 120 kata atau lebih panjang dari 150 kata
+- JANGAN melebihi 280 karakter — lebih baik pendek dan padat daripada panjang
 
 TULIS TWEET-NYA SAJA, TANPA LABEL, TANPA HEADER:`;
 
@@ -296,7 +335,7 @@ ${TONE_INSTRUCTION[tone] || ''}
 ${videoUrl ? `🎯 MODE BALASAN LANGSUNG KE MEDIA:
 - Tulis sebagai komentar/reply langsung untuk posting asli, bukan artikel atau renungan.
 - Kalimat pertama WAJIB menjadi hook/reaksi spontan terhadap momen paling lucu, mengejutkan, absurd, atau menarik yang benar-benar terlihat/terdengar.
-- Gunakan 1-3 kalimat pendek, sekitar 20-60 kata per variasi.
+- Gunakan 1-3 kalimat pendek, maksimal 240 karakter per variasi.
 - Fokus pada kejadian di video. Boleh memakai humor, punchline, pertanyaan singkat, atau observasi tajam.
 - Jangan mengarang motif, pesan moral, pelajaran hidup, atau kesimpulan tentang manusia jika tidak tampak jelas di video.
 - Jangan memakai pembuka generik seperti "Kadang gue...", "Video ini mengajarkan...", "Ini bukan berarti...", atau "Alam selalu...".
@@ -309,6 +348,7 @@ ${VIRAL_HOOK_STRATEGY}
 ${ALGO_REPLY_BAIT}
 ${EMOJI_RULES}
 ${ALGO_ANTI_PENALTY}
+${LENGTH_RULE}
 ${MODEL_OUTPUT_GUARD}
 
 ✅ FORMAT OUTPUT — TIAP VARIASI DIPISAH "---":
@@ -321,14 +361,14 @@ ${MODEL_OUTPUT_GUARD}
 ⚠️ SETIAP TWEET HARUS:
 - LANGSUNG mulai dengan isi tweet. JANGAN memberi salam, pengantar, penjelasan, atau kalimat seperti "Saya akan...".
 - JANGAN menyebut nama model, Gemini, AI, asisten, prompt, URL, link, atau proses analisis.
-- ${videoUrl ? '20-60 kata; ringkas seperti balasan di kolom komentar' : '120-150 kata (padat, berbobot)'}
+- ${videoUrl ? 'Maksimal 240 karakter; ringkas seperti balasan di kolom komentar' : 'Maksimal 260 KARAKTER (sekitar 30-45 kata); 1 paragraf ringkas, padat seperti reply di kolom komentar'}
 - Hook berbeda (random dari 8 hook types)
 - Emoji emosi yang match (ikut EMOJI QUALITY GUIDE)
 - Personal voice: "gue/aku" atau "I" untuk English
 - Akhiri reply bait natural
 - TIDAK BOLEH ada kalimat generik, klise, atau template
 - TIDAK BOLEH pakai frasa formal/akademik
-- ${videoUrl ? 'JANGAN lebih panjang dari 60 kata' : 'JANGAN kurang dari 120 kata atau lebih dari 150 kata'}
+- ${videoUrl ? 'JANGAN melebihi 240 karakter' : 'JANGAN melebihi 280 karakter — batas keras kolom Twitter'}
 
 TULIS ${maxCount} TWEET:`;
 

@@ -10,7 +10,8 @@ Generate viral-ready tweets optimized for the **X Algorithm 2026** — not gener
 
 - **8 Hook Types** — Hot takes, surprising stats, contrarian opinions, personal confessions, rants, and more
 - **Reply Bait Strategy** — End every tweet with questions that spark conversation (the +75 signal)
-- **Anti-Bot Filter** — Post-processing removes robotic phrases, adds natural paragraph spacing
+- **Anti-Bot Filter** — Post-processing removes robotic phrases
+- **280-Character Fit** — Every output is written to a 200–260 character target and hard-fitted to Twitter's 280-character limit (Twitter-weighted counting, emoji = 2) at sentence boundaries, so posts and replies always fit the reply box; the Generate page shows a live `n/280` counter
 - **Multi-Tone Support** — Supportif, Debate, Kritik Pedas (each with tone-specific emoji guidelines)
 - **Multi-Provider** — CrowLLM (free model catalogue), OpenRouter, OpenAI, Gemini, Groq, Xingchi AI, Custom API
 
