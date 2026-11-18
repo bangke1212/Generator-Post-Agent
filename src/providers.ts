@@ -1,6 +1,6 @@
 // Multi-provider AI — Vite client-side (no backend)
 // X Algorithm 2026 — All-timeline coverage optimization
-// 7 Providers · 29+ Models
+// 8 Providers · 39 Models
 
 import OpenAI from 'openai';
 
@@ -178,6 +178,18 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       { id: 'gpt-6-luna', name: 'GPT-6 Luna', temperature: 0.8, maxTokens: 1000, strengths: ['natural_id', 'creative'], bestFor: 'Draft singkat dan penggunaan rutin.' },
     ],
   },
+  numes: {
+    name: 'Numes AI',
+    icon: '🆓',
+    baseUrl: 'https://api.numes.ai/api/v1',
+    docs: 'https://numes.ai/dashboard/keys',
+    rateLimitNote: '✅ GRATIS! Model uncensored gratis di Numes. Buat API key di numes.ai/dashboard/keys (mata uang USD). Dipanggil lewat proxy Vercel /api/numes karena Numes menolak request browser langsung.',
+    models: [
+      { id: 'glm-5.3-uncensored', name: '🆓 GLM 5.3 Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+      { id: 'glm-5.3-flash-uncensored', name: '🆓 GLM 5.3 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast'], bestFor: 'Versi cepat GLM 5.3 uncensored; tinjau hasilnya.' },
+      { id: 'deepseek-v4.1-flash-uncensored', name: '🆓 DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+    ],
+  },
   custom: {
     name: 'Custom API',
     icon: '🔧',
@@ -185,6 +197,42 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     models: [{ id: 'custom-model', name: 'Custom Model', temperature: 0.85, maxTokens: 700, strengths: ['unknown'], bestFor: 'Custom endpoint' }],
   },
 };
+
+// Humanizer (blader/humanizer, SKILL.md v4.0.0, MIT) — panduan suara manusia.
+// Satu tempat bersama: callAI() menyuntikkannya ke SETIAP pemanggilan model
+// (semua provider), jadi model apa pun yang dipilih user selalu membawanya.
+// Skill ini TIDAK mencoba lolos dari AI detector; tujuannya tulisan yang
+// terdengar seperti orang beneran, bukan template. Pola yang dilarang di sini
+// adalah pola yang bisa dikenali aturan (§1, §2, §4, §6, §8, §12, §13, §16, §22)
+// dan juga ditegakkan lagi oleh postProcess() di gemini.ts.
+// Dipindah ke sini dari gemini.ts (PR #3) supaya tidak diduplikasi di tiap
+// builder prompt; gemini.ts tidak lagi menyuntikkannya sendiri.
+export const HUMAN_VOICE_GUIDE = `
+🗣️ SUARA MANUSIA — TULIS SEPERTI ORANG, BUKAN TEMPLATE (humanizer §1-§22):
+- Satu detail spesifik yang nyata ("kopi sachet 3 ribuan di warung sebelah kantor")
+  selalu lebih manusiawi daripada klaim umum ("kopi adalah teman setia").
+- DILARANG pola "bukan X, tapi Y" / "not just X, but Y" ("bukan sekadar kopi, tapi
+  ritual pagi" / "It's not just a tool, it's a weapon"). Nyatakan langsung:
+  "Kopi pagi itu ritual gue."
+- DILARANG pembuka staging: "Yuk kita bahas", "Mari kita bahas", "Tanpa basa-basi",
+  "Jujur ya", "Let's dive in", "Here's the thing", "Real talk", "Let's be honest".
+  Langsung ke poin, tanpa pengumuman.
+- DILARANG penutup satu baris yang mengulang poin: "Itulah kuncinya.",
+  "Itulah intinya.", "That's the real win.", "Let that sink in." Akhiri dengan
+  pertanyaan yang benar-benar ingin dijawab, bukan kesimpulan yang diulang.
+- DILARANG daftar tiga serangkai yang dipaksakan ("cepat, murah, dan berkualitas"
+  kalau maknanya cuma satu). Satu contoh yang dikembangkan lebih baik dari tiga
+  contoh yang sejajar.
+- DILARANG klaim bombastis dan bahasa jualan: "game-changer", "revolusioner",
+  "mengubah segalanya", "wajib coba", "luar biasa", "groundbreaking", "must-visit".
+- DILARANG kata stok AI: delve, crucial, landscape, tapestry, showcase, underscore,
+  pivotal, meticulous, "mendalam", "krusial", "lanskap", "penting untuk dicatat".
+- DILARANG em dash (—) dan double hyphen (--). Pakai koma atau titik.
+- Variasikan panjang kalimat. Satu kalimat pendek boleh, tapi harus membawa fakta
+  baru, bukan mengulang kalimat sebelumnya.
+- Jangan menjelaskan latar yang sudah jelas dari topik/ide yang diberikan.
+  Pembaca sudah tahu konteksnya; langsung ke pendapat atau ceritanya.
+`;
 
 export interface GenerateParams {
   provider: string;
@@ -196,6 +244,10 @@ export interface GenerateParams {
   videoUrl?: string;
   maxTokens?: number;
   temperature?: number;
+  // Humanizer aktif secara default untuk semua konten. Isi false hanya untuk
+  // pemanggilan yang BUKAN konten (mis. testConnection): panduan suara manusia
+  // akan merusak instruksi probe yang minta jawaban satu kata.
+  humanize?: boolean;
 }
 
 export interface ModelOptimalParams {
@@ -239,7 +291,7 @@ async function resolveVideoForProvider(videoUrl: string, prompt: string): Promis
 }
 
 export async function callAI(params: GenerateParams): Promise<{ content: string; provider: string; model: string }> {
-  const { provider, apiKey, baseUrl, model, prompt, imageData, videoUrl, maxTokens, temperature } = params;
+  const { provider, apiKey, baseUrl, model, prompt, imageData, videoUrl, maxTokens, temperature, humanize } = params;
 
   const preset = PROVIDER_PRESETS[provider];
   if (!preset) throw new Error('Provider ' + provider + ' tidak dikenal');
@@ -249,6 +301,16 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
 
   const optimal = getModelParams(provider, model);
   const resolved = videoUrl ? await resolveVideoForProvider(videoUrl, prompt) : { mediaUrl: '', mediaType: 'video' as const, prompt };
+
+  // Humanizer: satu tempat bersama. Setiap pemanggilan model — provider dan
+  // model apa pun — membawa HUMAN_VOICE_GUIDE, kecuali caller menonaktifkan
+  // secara eksplisit (humanize: false, mis. testConnection). Penanda 'SUARA
+  // MANUSIA' mencegah penyuntikan ganda bila caller sudah menyertakannya.
+  const useHumanizer = humanize !== false;
+  const guideAlreadyPresent = resolved.prompt.includes('SUARA MANUSIA');
+  const guidedPrompt = useHumanizer && !guideAlreadyPresent
+    ? HUMAN_VOICE_GUIDE + '\n\n' + resolved.prompt
+    : resolved.prompt;
 
   // CrowLLM is called through a same-origin Vercel function to avoid browser CORS failures.
   if (provider === 'crowllm') {
@@ -261,7 +323,7 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
           action: 'chat',
           apiKey,
           model,
-          prompt: resolved.prompt,
+          prompt: guidedPrompt,
           imageData,
           videoUrl: resolved.mediaUrl,
           mediaType: resolved.mediaType,
@@ -300,7 +362,7 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
         body: JSON.stringify({
           apiKey,
           model,
-          prompt: resolved.prompt,
+          prompt: guidedPrompt,
           videoUrl: resolved.mediaUrl,
           mediaType: resolved.mediaType,
           maxTokens: maxTokens || optimal.maxTokens,
@@ -329,6 +391,47 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     return { content, provider: preset.name, model };
   }
 
+  // Numes is called through a same-origin Vercel function: Numes rejects
+  // browser requests from third-party origins (403 cors_forbidden), so a
+  // direct OpenAI-compatible call from the frontend cannot work.
+  if (provider === 'numes') {
+    let response: Response;
+    try {
+      response = await fetch('/api/numes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey,
+          model,
+          prompt: guidedPrompt,
+          videoUrl: resolved.mediaUrl,
+          mediaType: resolved.mediaType,
+          maxTokens: maxTokens || optimal.maxTokens,
+          temperature: temperature ?? optimal.temperature,
+        }),
+      });
+    } catch {
+      throw new Error('Tidak dapat menghubungi backend Vercel (/api/numes). Pastikan deployment terbaru sudah selesai.');
+    }
+
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error('Backend Numes mengembalikan respons tidak valid (HTTP ' + response.status + '). Periksa deployment fungsi Vercel.');
+    }
+    if (!response.ok) {
+      throw new Error(data?.error?.message || 'Numes API gagal (HTTP ' + response.status + ')');
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      throw new Error('Numes merespons tanpa teks. Periksa model dan format respons API.');
+    }
+    return { content, provider: preset.name, model };
+  }
+
   const openai = new OpenAI({
     apiKey,
     baseURL: endpoint,
@@ -343,9 +446,15 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
       ]
     : resolved.prompt;
 
+  // Jalur OpenAI-compatible: panduan humanizer dikirim sebagai system message
+  // (bukan ditempel ke user prompt), supaya tidak mengotori isi prompt.
+  const messages: any[] = useHumanizer && !guideAlreadyPresent
+    ? [{ role: 'system', content: HUMAN_VOICE_GUIDE }, { role: 'user', content: messageContent }]
+    : [{ role: 'user', content: messageContent }];
+
   const res = await openai.chat.completions.create({
     model,
-    messages: [{ role: 'user', content: messageContent }],
+    messages,
     max_tokens: maxTokens || optimal.maxTokens,
     temperature: temperature ?? optimal.temperature,
   });
@@ -362,6 +471,9 @@ export async function testConnection(params: { provider: string; apiKey: string;
     const result = await callAI({
       ...params,
       prompt: params.provider === 'crowllm' ? 'Reply with the single word: ready.' : 'Test koneksi — reply dengan OK saja',
+      // BUKAN konten: probe koneksi satu kata. Panduan humanizer akan merusak
+      // instruksi ini, jadi nonaktifkan di sini.
+      humanize: false,
     });
     return { success: !!result.content, error: result.content ? undefined : 'No response' };
   } catch (e: any) {
