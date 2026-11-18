@@ -71,6 +71,18 @@ Model discovery and chat completions both go through the same-origin Vercel func
 
 **Deployment note:** Redeploy the latest `main` branch on Vercel so the updated `/api/crowllm` serverless function is available. The browser sends the key to your own Vercel deployment, which forwards it to CrowLLM over HTTPS; keep the Vercel project and browser session trusted.
 
+### 🎨 Text to Image — CrowLLM & Xingchi (gpt-image)
+
+The **Text to Image** tab (`/images`) generates images from a prompt. Two image providers are available, selectable at the top of the page:
+
+- **CrowLLM** — image models discovered from your CrowLLM key's catalogue, plus the DeepSeek prompt enhancer.
+- **Xingchi AI** — the `gpt-image` family served by Xingchi's OpenAI-compatible API (`https://api.xingchiapi.com/v1/images/generations`), proxied through the same-origin Vercel function `/api/xingchi-image` to avoid browser CORS failures. The key never leaves your own deployment except to Xingchi over HTTPS, and the proxy does not log API keys.
+
+Xingchi image models verified against the live catalogue (2026-11-18): `gpt-image-2.6-flare`, `gpt-image-2.6-sunburst`, `gpt-image-2.5-flare`, `gpt-image-2.5-sunburst`, `gpt-image-2`, `gpt-image-1.5`, `gpt-image-1`. The page loads the model list dynamically from `GET /v1/models` using your saved Xingchi key, so the models you see are exactly the ones your key's group can access; the verified list above is the fallback if the catalogue cannot be loaded. Sizes: 1024×1024, 1024×1536, 1536×1024.
+
+To use it: save your Xingchi key in **AI Providers → Xingchi AI**, open **Text to Image**, choose **Xingchi AI · gpt-image** as the image provider, pick a model, write a prompt, and click **Generate Image**. Paid models are billed to your Xingchi balance at your key group's rate.
+
+**Xingchi policy note:** Xingchi is known to refuse traffic from third-party apps (it allows its official programming clients such as Codex, Claude Code, Cursor, and Cline). If Xingchi applies that policy to image requests from this app, the proxy surfaces Xingchi's refusal as a clear `XINGCHI_CLIENT_NOT_SUPPORTED` message instead of a generic failure — the CrowLLM image provider remains available as the alternative.
 
 ## 📁 Project Structure
 
@@ -85,7 +97,13 @@ src/
 └── pages/
     ├── Ideas.tsx        # Multi-variant idea generator
     ├── Generate.tsx     # Single tweet generator
+    ├── ImageGenerate.tsx # Text-to-image (CrowLLM & Xingchi gpt-image)
     └── Settings.tsx     # API key management
+
+api/
+├── crowllm.js           # Vercel proxy for CrowLLM (chat, models, images)
+├── xingchi.js           # Vercel proxy for Xingchi chat completions
+└── xingchi-image.js     # Vercel proxy for Xingchi image generation (gpt-image)
 ```
 
 ## 🔥 Viral Tweet Formula (Built into Prompts)

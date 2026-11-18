@@ -3,7 +3,20 @@ import { getAllApiKeys } from '../store';
 
 interface Props { onTabChange: (tab: string) => void; }
 interface ImageModel { id: string; name?: string; free?: boolean; }
+type ImageProviderId = 'crowllm' | 'xingchi';
 const PROMPT_MODEL_IDS = ['deepseek-v4-flash-uncensored:free', 'deepseek-v4.1-flash-uncensored:free'];
+// Model gambar Xingchi (gpt-image) — terverifikasi dari katalog API Xingchi, 2026-11-18.
+// Dipakai sebagai fallback bila katalog dinamis dari key pengguna gagal dimuat.
+const XINGCHI_IMAGE_MODELS: ImageModel[] = [
+  'gpt-image-2.6-flare',
+  'gpt-image-2.6-sunburst',
+  'gpt-image-2.5-flare',
+  'gpt-image-2.5-sunburst',
+  'gpt-image-2',
+  'gpt-image-1.5',
+  'gpt-image-1',
+].map(id => ({ id, name: id }));
+const PROVIDER_LABELS: Record<ImageProviderId, string> = { crowllm: 'CrowLLM', xingchi: 'Xingchi AI' };
 
 async function crowllmRequest(body: Record<string, unknown>) {
   const response = await fetch('/api/crowllm', {
@@ -19,7 +32,23 @@ async function crowllmRequest(body: Record<string, unknown>) {
   return payload;
 }
 
+async function xingchiImageRequest(body: Record<string, unknown>) {
+  const response = await fetch('/api/xingchi-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const raw = await response.text();
+  let payload: any;
+  try { payload = JSON.parse(raw); }
+  catch { throw new Error('Backend Xingchi mengembalikan respons tidak valid (HTTP ' + response.status + '). Periksa deployment Vercel.'); }
+  if (!response.ok) throw new Error(payload?.error?.message || 'Xingchi gagal (HTTP ' + response.status + ').');
+  return payload;
+}
+
 export default function ImageGenerate({ onTabChange }: Props) {
+  const [imageProvider, setImageProvider] = useState<ImageProviderId>('crowllm');
+  const [providerReady, setProviderReady] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [models, setModels] = useState<ImageModel[]>([]);
   const [model, setModel] = useState('');
@@ -35,19 +64,52 @@ export default function ImageGenerate({ onTabChange }: Props) {
   const [resultModel, setResultModel] = useState('');
   const [error, setError] = useState('');
 
+  const providerLabel = PROVIDER_LABELS[imageProvider];
+
+  // Pilih provider awal: provider yang key-nya tersimpan. Xingchi didahulukan bila hanya key Xingchi yang ada.
   useEffect(() => {
-    const saved = getAllApiKeys().find(item => item.provider === 'crowllm');
-    setApiKey(saved?.api_key || '');
+    const keys = getAllApiKeys();
+    const hasCrow = !!keys.find(item => item.provider === 'crowllm')?.api_key;
+    const hasXingchi = !!keys.find(item => item.provider === 'xingchi')?.api_key;
+    if (hasXingchi && !hasCrow) setImageProvider('xingchi');
+    setProviderReady(true);
   }, []);
+
+  // Ambil key sesuai provider terpilih setiap kali provider berganti.
+  useEffect(() => {
+    if (!providerReady) return;
+    const saved = getAllApiKeys().find(item => item.provider === imageProvider);
+    setApiKey(saved?.api_key || '');
+    setModels([]);
+    setModel('');
+    setPromptModels([]);
+    setPromptModel('');
+    setError('');
+  }, [imageProvider, providerReady]);
 
   const loadModels = async () => {
     if (!apiKey) {
-      setError('API Key CrowLLM belum tersimpan. Buka AI Providers, tambahkan CrowLLM, lalu simpan API key.');
+      setError(`API Key ${providerLabel} belum tersimpan. Buka AI Providers, tambahkan ${providerLabel}, lalu simpan API key.`);
       return;
     }
     setLoadingModels(true);
     setError('');
     try {
+      if (imageProvider === 'xingchi') {
+        try {
+          const catalog = await xingchiImageRequest({ action: 'image_models', apiKey });
+          const available = Array.isArray(catalog.models) ? catalog.models : [];
+          const list = available.length ? available : XINGCHI_IMAGE_MODELS;
+          setModels(list);
+          setModel(current => list.some((item: ImageModel) => item.id === current) ? current : (list[0]?.id || ''));
+        } catch {
+          // Katalog dinamis gagal — pakai daftar gpt-image terverifikasi.
+          setModels(XINGCHI_IMAGE_MODELS);
+          setModel(current => XINGCHI_IMAGE_MODELS.some(item => item.id === current) ? current : XINGCHI_IMAGE_MODELS[0].id);
+          setError('Katalog model Xingchi tidak dapat dimuat dari key ini; menampilkan daftar model gpt-image terverifikasi. Generate tetap bisa dicoba.');
+        }
+        return;
+      }
       const [catalog, chatCatalog] = await Promise.all([
         crowllmRequest({ action: 'image_models', apiKey }),
         crowllmRequest({ action: 'models', apiKey }),
@@ -63,7 +125,7 @@ export default function ImageGenerate({ onTabChange }: Props) {
       setModel(current => available.some((item: ImageModel) => item.id === current) ? current : (available[0]?.id || ''));
       if (!available.length) setError('Tidak ada model dengan endpoint image generation yang terdeteksi pada katalog API key ini. Pastikan akun CrowLLM memiliki akses ke model Text-to-Image.');
     } catch (e: any) {
-      setError(e.message || 'Gagal memuat model image CrowLLM.');
+      setError(e.message || `Gagal memuat model image ${providerLabel}.`);
     } finally {
       setLoadingModels(false);
     }
@@ -92,7 +154,7 @@ export default function ImageGenerate({ onTabChange }: Props) {
   };
 
   const generate = async () => {
-    if (!apiKey) { setError('API Key CrowLLM belum tersimpan. Buka AI Providers terlebih dahulu.'); return; }
+    if (!apiKey) { setError(`API Key ${providerLabel} belum tersimpan. Buka AI Providers terlebih dahulu.`); return; }
     if (!model) { setError('Belum ada model Text-to-Image yang tersedia. Muat ulang katalog model.'); return; }
     if (!prompt.trim()) { setError('Masukkan deskripsi gambar terlebih dahulu.'); return; }
     setGenerating(true);
@@ -100,14 +162,16 @@ export default function ImageGenerate({ onTabChange }: Props) {
     setImageUrl('');
     setRevisedPrompt('');
     try {
-      const payload = await crowllmRequest({ action: 'generate_image', apiKey, model, prompt, size });
+      const payload = imageProvider === 'xingchi'
+        ? await xingchiImageRequest({ action: 'generate_image', apiKey, model, prompt, size })
+        : await crowllmRequest({ action: 'generate_image', apiKey, model, prompt, size });
       const image = Array.isArray(payload?.data) ? payload.data[0] : Array.isArray(payload?.images) ? payload.images[0] : null;
       if (typeof image?.b64_json === 'string' && image.b64_json) {
         setImageUrl('data:image/png;base64,' + image.b64_json);
       } else if (typeof image?.url === 'string' && image.url) {
         setImageUrl(image.url);
       } else {
-        throw new Error('CrowLLM berhasil merespons, tetapi tidak mengirim URL atau data gambar yang dikenali.');
+        throw new Error(`${providerLabel} berhasil merespons, tetapi tidak mengirim URL atau data gambar yang dikenali.`);
       }
       setRevisedPrompt(typeof image?.revised_prompt === 'string' ? image.revised_prompt : '');
       setResultModel(model);
@@ -123,7 +187,7 @@ export default function ImageGenerate({ onTabChange }: Props) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2"><span className="text-2xl">🎨</span> Text to Image</h2>
-          <p className="text-sm text-[#475569] mt-1">Buat gambar dari prompt menggunakan model image CrowLLM.</p>
+          <p className="text-sm text-[#475569] mt-1">Buat gambar dari prompt menggunakan model image CrowLLM atau Xingchi AI (gpt-image).</p>
         </div>
         <button onClick={() => onTabChange('settings')} className="btn-ghost text-sm">⚙ AI Providers</button>
       </div>
@@ -131,9 +195,18 @@ export default function ImageGenerate({ onTabChange }: Props) {
       <section className="card-glow space-y-4">
         {!apiKey && (
           <div className="rounded-xl border border-[#fbbf24]/30 bg-[#fbbf24]/5 p-3 text-sm text-[#B45309]">
-            API Key CrowLLM belum ditemukan. Simpan API key CrowLLM di halaman AI Providers terlebih dahulu.
+            API Key {providerLabel} belum ditemukan. Simpan API key {providerLabel} di halaman AI Providers terlebih dahulu.
           </div>
         )}
+        <div>
+          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block mb-2">Provider gambar</label>
+          <select value={imageProvider} onChange={event => setImageProvider(event.target.value as ImageProviderId)} className="input">
+            <option value="crowllm">CrowLLM</option>
+            <option value="xingchi">Xingchi AI · gpt-image</option>
+          </select>
+          <p className="text-[11px] text-[#64748b] mt-2">Key yang dipakai adalah key {providerLabel} yang tersimpan di halaman AI Providers.</p>
+        </div>
+
         <div>
           <div className="flex items-center justify-between gap-3 mb-2">
             <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider">Model gambar</label>
@@ -145,22 +218,26 @@ export default function ImageGenerate({ onTabChange }: Props) {
             {!models.length && <option value="">Belum ada model image</option>}
             {models.map(item => <option key={item.id} value={item.id}>{item.id}{item.free ? ' · Free' : ''}</option>)}
           </select>
-          <p className="text-[11px] text-[#64748b] mt-2">Daftar hanya menampilkan model yang katalog CrowLLM tandai mendukung endpoint image generation. Model berbayar dapat menimbulkan biaya sesuai tarif akun.</p>
+          {imageProvider === 'xingchi'
+            ? <p className="text-[11px] text-[#64748b] mt-2">Daftar berasal dari katalog model yang terlihat oleh API key Xingchi kamu (grup key menentukan model yang tersedia). Model berbayar dapat menimbulkan biaya sesuai tarif akun.</p>
+            : <p className="text-[11px] text-[#64748b] mt-2">Daftar hanya menampilkan model yang katalog CrowLLM tandai mendukung endpoint image generation. Model berbayar dapat menimbulkan biaya sesuai tarif akun.</p>}
         </div>
 
-        <div>
-          <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block mb-2">Model penyusun prompt (DeepSeek)</label>
-          <div className="flex gap-2">
-            <select value={promptModel} onChange={event => setPromptModel(event.target.value)} disabled={!promptModels.length || loadingModels} className="input flex-1">
-              {!promptModels.length && <option value="">Model DeepSeek belum tersedia</option>}
-              {promptModels.map(item => <option key={item.id} value={item.id}>{item.id}</option>)}
-            </select>
-            <button type="button" onClick={enhancePrompt} disabled={!promptModel || !prompt.trim() || enhancing || loadingModels} className="btn-outline text-xs px-3 whitespace-nowrap">
-              {enhancing ? 'Menyusun...' : '✨ Perbaiki prompt'}
-            </button>
+        {imageProvider === 'crowllm' && (
+          <div>
+            <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block mb-2">Model penyusun prompt (DeepSeek)</label>
+            <div className="flex gap-2">
+              <select value={promptModel} onChange={event => setPromptModel(event.target.value)} disabled={!promptModels.length || loadingModels} className="input flex-1">
+                {!promptModels.length && <option value="">Model DeepSeek belum tersedia</option>}
+                {promptModels.map(item => <option key={item.id} value={item.id}>{item.id}</option>)}
+              </select>
+              <button type="button" onClick={enhancePrompt} disabled={!promptModel || !prompt.trim() || enhancing || loadingModels} className="btn-outline text-xs px-3 whitespace-nowrap">
+                {enhancing ? 'Menyusun...' : '✨ Perbaiki prompt'}
+              </button>
+            </div>
+            <p className="text-[11px] text-[#64748b] mt-2">DeepSeek hanya menyusun prompt melalui endpoint chat. Model ini tidak digunakan untuk membuat file gambar.</p>
           </div>
-          <p className="text-[11px] text-[#64748b] mt-2">DeepSeek hanya menyusun prompt melalui endpoint chat. Model ini tidak digunakan untuk membuat file gambar.</p>
-        </div>
+        )}
 
         <div>
           <label className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block mb-2">Prompt gambar</label>
@@ -191,9 +268,9 @@ export default function ImageGenerate({ onTabChange }: Props) {
         <section className="card-glow space-y-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div><h3 className="font-semibold">Hasil gambar</h3><p className="text-[11px] text-[#475569] mt-1">{resultModel}</p></div>
-            <a href={imageUrl} download="crowllm-generated-image.png" target="_blank" rel="noreferrer" className="btn-outline text-xs">⬇ Buka / Simpan gambar</a>
+            <a href={imageUrl} download={`${imageProvider}-generated-image.png`} target="_blank" rel="noreferrer" className="btn-outline text-xs">⬇ Buka / Simpan gambar</a>
           </div>
-          <img src={imageUrl} alt="Hasil gambar dari CrowLLM" className="w-full max-h-[760px] object-contain rounded-xl border border-[#CBD5E1] bg-[#F8FAFC]" />
+          <img src={imageUrl} alt={`Hasil gambar dari ${providerLabel}`} className="w-full max-h-[760px] object-contain rounded-xl border border-[#CBD5E1] bg-[#F8FAFC]" />
           {revisedPrompt && <p className="text-xs text-[#475569]">Prompt hasil revisi model: {revisedPrompt}</p>}
           <button onClick={generate} disabled={generating} className="btn-outline w-full">↻ Generate ulang</button>
         </section>
