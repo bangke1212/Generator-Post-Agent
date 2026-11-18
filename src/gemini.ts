@@ -49,6 +49,23 @@ const BOT_PATTERNS: Array<{ p: RegExp; r: string | ((_: string, p1: string, p2: 
   { p: /([.!?]\s+)([a-z])/g, r: (_: string, p1: string, p2: string) => p1 + p2.toUpperCase() },
   { p: /\b(Berdasarkan data|Menurut penelitian|Studi menunjukkan|Hasil riset membuktikan)\s*/gi, r: '' },
   { p: /\b(Dalam konteks ini|Pada akhirnya|Intinya adalah|Kesimpulannya)\s*/gi, r: '' },
+  // Humanizer §4 — staged openers (di awal teks / awal paragraf). Dihapus karena
+  // kalimat sesudahnya sudah berdiri sendiri tanpa pengumuman.
+  { p: /(^|\n\n)(Yuk (kita )?bahas|Mari kita bahas|Tanpa (basa-basi|panjang lebar)|Jujur (ya|aja)|Dengar ya|Begini,|Jadi gini,)\s+/gim, r: '$1' },
+  { p: /(^|\n\n)(Let's dive in|Let's break this down|Here's the thing|Here's what you need to know|Real talk|Let's be honest|Look,|Honestly\?)\s+/gim, r: '$1' },
+  // Humanizer §22 — chatbot residue (EN + ID).
+  { p: /^(Of course!?|Certainly!?|Great question!?|You're absolutely right!?|Tentu!?|Tentu saja!?|Pertanyaan bagus!?)\s+/gim, r: '' },
+  { p: /\s*(I hope this helps!?|Let me know if (you'd|you want)[^\n]*|Berikut (?:tweetnya|adalah)\s*:?|Here(?:'s| is)(?: a)? (?:tweet|an overview|a quick (?:look|overview))(?:[:.])?)\s*$/gim, r: '' },
+  // Humanizer §3/§12 — filler & kata stok AI yang aman dihapus (kalimat sisanya
+  // tetap utuh secara gramatikal).
+  { p: /\b(Penting untuk dicatat bahwa|Perlu dicatat bahwa|Sebagai kesimpulan,|Dalam dunia yang terus berkembang,?|Di era yang terus berubah,?)\s*/gi, r: '' },
+  { p: /\b(It(?:'s| is) important to note that|In conclusion,|Furthermore,|Moreover,|Additionally,|In today'?s fast-paced world,?|In the ever-evolving landscape of)\s*/gi, r: '' },
+  // Humanizer §19 — bold markdown sebagai dekorasi di tweet.
+  { p: /\*\*([^*]+)\*\*/g, r: '$1' },
+  { p: /^#{1,6}\s+/gm, r: '' },
+  // Huruf pertama kalimat/paragraf harus kapital — aturan ini diletakkan terakhir
+  // karena penghapusan frasa di atas bisa menyisakan awal kalimat huruf kecil.
+  { p: /(^|\n\n)([a-z])/g, r: (_: string, p1: string, p2: string) => p1 + p2.toUpperCase() },
 ];
 
 const MODEL_OUTPUT_GUARD = `
@@ -58,9 +75,90 @@ const MODEL_OUTPUT_GUARD = `
 - Jangan menulis kalimat seperti "Saya akan membuatkan...", "Berikut tweetnya...", atau "Sebagai AI...".
 `;
 
+// Humanizer (blader/humanizer, SKILL.md v4.0.0, MIT) — panduan suara manusia.
+// Skill ini TIDAK mencoba lolos dari AI detector; tujuannya tulisan yang
+// terdengar seperti orang beneran, bukan template. Pola yang dilarang di sini
+// adalah pola yang bisa dikenali aturan (§1, §2, §4, §6, §8, §12, §13, §16, §22)
+// dan juga ditegakkan lagi oleh postProcess() di bawah.
+const HUMAN_VOICE_GUIDE = `
+🗣️ SUARA MANUSIA — TULIS SEPERTI ORANG, BUKAN TEMPLATE (humanizer §1-§22):
+- Satu detail spesifik yang nyata ("kopi sachet 3 ribuan di warung sebelah kantor")
+  selalu lebih manusiawi daripada klaim umum ("kopi adalah teman setia").
+- DILARANG pola "bukan X, tapi Y" / "not just X, but Y" ("bukan sekadar kopi, tapi
+  ritual pagi" / "It's not just a tool, it's a weapon"). Nyatakan langsung:
+  "Kopi pagi itu ritual gue."
+- DILARANG pembuka staging: "Yuk kita bahas", "Mari kita bahas", "Tanpa basa-basi",
+  "Jujur ya", "Let's dive in", "Here's the thing", "Real talk", "Let's be honest".
+  Langsung ke poin, tanpa pengumuman.
+- DILARANG penutup satu baris yang mengulang poin: "Itulah kuncinya.",
+  "Itulah intinya.", "That's the real win.", "Let that sink in." Akhiri dengan
+  pertanyaan yang benar-benar ingin dijawab, bukan kesimpulan yang diulang.
+- DILARANG daftar tiga serangkai yang dipaksakan ("cepat, murah, dan berkualitas"
+  kalau maknanya cuma satu). Satu contoh yang dikembangkan lebih baik dari tiga
+  contoh yang sejajar.
+- DILARANG klaim bombastis dan bahasa jualan: "game-changer", "revolusioner",
+  "mengubah segalanya", "wajib coba", "luar biasa", "groundbreaking", "must-visit".
+- DILARANG kata stok AI: delve, crucial, landscape, tapestry, showcase, underscore,
+  pivotal, meticulous, "mendalam", "krusial", "lanskap", "penting untuk dicatat".
+- DILARANG em dash (—) dan double hyphen (--). Pakai koma atau titik.
+- Variasikan panjang kalimat. Satu kalimat pendek boleh, tapi harus membawa fakta
+  baru, bukan mengulang kalimat sebelumnya.
+- Jangan menjelaskan latar yang sudah jelas dari topik/ide yang diberikan.
+  Pembaca sudah tahu konteksnya; langsung ke pendapat atau ceritanya.
+`;
+
+// Humanizer §1 — "bukan X, tapi Y" / "not X, but Y", hanya bentuk sempit yang
+// aman ditulis ulang oleh aturan: diawali subjek + "bukan/not" dan dipisah koma.
+// Bentuk lain (mis. kontras dua kalimat) dicegah di prompt (HUMAN_VOICE_GUIDE).
+// "Ini bukan sekadar alat, tapi teman kerja." -> "Ini teman kerja."
+// "This is not just a tool, but a weapon." -> "This is a weapon."
+// "It's not a sprint, it's a marathon." -> "It's a marathon."
+const NOT_X_BUT_Y_PATTERNS: Array<{ p: RegExp; r: string }> = [
+  { p: /\b(Ini|Itu|Dia|Hal ini) bukan (?:sekadar|hanya|cuma)\s+[^,;.!?\n]{1,60},\s*(?:tapi|melainkan|namun)\s+/gi, r: '$1 ' },
+  { p: /\b(Ini|Itu) bukan\s+[^,;.!?\n]{1,60},\s*(?:ini|itu)\s+/gi, r: '$1 ' },
+  { p: /\b(This|That|It) is not (?:just|only|merely)\s+[^,;.!?\n]{1,60},\s*(?:but|it's|it is)\s+/gi, r: '$1 is ' },
+  { p: /\bIt(?:'s| is) not (?:just|only|merely)\s+[^,;.!?\n]{1,60},\s*(?:but|it(?:'s| is))\s+/gi, r: "It's " },
+  { p: /\bIt(?:'s| is) not\s+[^,;.!?\n]{1,60},\s*it(?:'s| is)\s+/gi, r: "It's " },
+];
+
+// Humanizer §2 — penutup satu baris yang hanya mengulang poin sebelumnya.
+const CLOSER_CORE = String.raw`Itulah (?:kuncinya|intinya|yang penting|bedanya)|Dan itulah[^.!?]*|Pikirkan itu|Renungkan itu|Baca lagi|Intinya begitu|That(?:'s| is) the real win|That distinction matters|Let that sink in|Read that again|The message was clear|That says it all`;
+const ONE_LINE_CLOSERS = new RegExp(`^(?:${CLOSER_CORE})[.!]?\\s*$`, 'i');
+const TRAILING_CLOSER_SENTENCE = new RegExp(`^(.*?)([.!?]\\s+)(?:${CLOSER_CORE})[.!]?\\s*$`, 'is');
+
+function removeOneLineClosers(text: string): string {
+  const trimmed = text.trim();
+  // 1) Paragraf/baris terakhir yang berdiri sendiri.
+  const lines = trimmed.split('\n');
+  let last = lines.length - 1;
+  while (last > 0 && lines[last].trim() === '') last--;
+  if (last > 0 && ONE_LINE_CLOSERS.test(lines[last].trim())) {
+    const before = lines.slice(0, last).join('\n').trim();
+    if (before.length > 0) return before;
+  }
+  // 2) Kalimat terakhir dalam satu paragraf ("... Itulah kuncinya.").
+  const m = trimmed.match(TRAILING_CLOSER_SENTENCE);
+  if (m && m[1].trim().length > 0) return m[1].trim() + m[2].trim();
+  return text;
+}
+
+// Humanizer §8 — em dash / en dash / double hyphen sebagai penghubung universal.
+// Di tweet hasil generate, dash diganti koma; URL/kode tidak disentuh karena pola
+// mensyaratkan huruf di depannya.
+function normalizeDashes(text: string): string {
+  return text
+    .replace(/(\w)\s*[—–]\s*/g, '$1, ')
+    .replace(/(\w)\s+--\s+/g, '$1, ');
+}
+
 function removeBotStyle(text: string): string {
   let result = text;
-  for (const { p, r } of BOT_PATTERNS) result = result.replace(p, r as any);
+  // Dua pass: penghapusan di pass pertama bisa mengekspos pola baru di awal
+  // teks/kalimat (mis. "Of course! Yuk kita bahas..." -> "Yuk kita bahas..."
+  // baru cocok dengan pola staged opener di pass kedua).
+  for (let pass = 0; pass < 2; pass++) {
+    for (const { p, r } of BOT_PATTERNS) result = result.replace(p, r as any);
+  }
   return result.replace(/ {2,}/g, ' ').replace(/^\n+/, '').replace(/\n+$/, '').replace(/\n{3,}/g, '\n\n').trim();
 }
 
@@ -72,10 +170,13 @@ function removeModelPreamble(text: string): string {
   return result.trim();
 }
 
-function postProcess(text: string): string {
+export function postProcess(text: string): string {
   let t = removeModelPreamble(text);
+  for (const { p, r } of NOT_X_BUT_Y_PATTERNS) t = t.replace(p, r);
+  t = normalizeDashes(t);
   t = ensureParagraphSpacing(t);
   t = removeBotStyle(t);
+  t = removeOneLineClosers(t);
   return ensureParagraphSpacing(t);
 }
 
@@ -123,6 +224,9 @@ SELALU AKHIRI DENGAN:
 - Pertanyaan terbuka: "Ada yang ngalamin juga?", "Gimana versi kalian?"
 - Call-to-reply natural: "Spill pengalaman lo 👇", "Drop hot take lo"
 - JANGAN tutup dengan kesimpulan — biarin TERBUKA buat diskusi
+- JANGAN tutup dengan kalimat penutup dramatis satu baris yang mengulang poin
+  (mis. "Itulah kuncinya." / "That's the real win.") — pertanyaan tulus lebih
+  manusiawi daripada kesimpulan yang dipentaskan
 - Jangan terlalu pushy — harus natural seperti ngobrol
 `;
 
@@ -211,7 +315,7 @@ export async function generateContent(opts: { topic?: string; language?: string;
 📌 TOPIK: ${topic}
 
 ${langGuidelines}
-
+${HUMAN_VOICE_GUIDE}
 ${EMOJI_QUALITY_GUIDE}
 ${modelHint}${modelConstraints}
 ${VIRAL_HOOK_STRATEGY}
@@ -231,7 +335,11 @@ ${MODEL_OUTPUT_GUARD}
 ⚠️ KUALITAS WAJIB:
 - TIDAK BOLEH generik, klise, atau template
 - TIDAK BOLEH pakai frasa formal/akademik
+- TIDAK BOLEH pola "bukan X, tapi Y" / "not just X, but Y", pembuka staging,
+  penutup satu baris yang mengulang poin, triad yang dipaksakan, atau klaim bombastis
 - HARUS ada opini personal yang tajam
+- HARUS ada SATU detail spesifik yang nyata (angka, tempat, kebiasaan konkret),
+  bukan klaim umum
 - HARUS menggunakan emoji yang match emosi
 - Tone harus konsisten di seluruh tweet
 - JANGAN lebih pendek dari 120 kata atau lebih panjang dari 150 kata
@@ -303,6 +411,7 @@ ${videoUrl ? `🎯 MODE BALASAN LANGSUNG KE MEDIA:
 - Jangan menjelaskan bahwa kamu sedang menganalisis video; langsung balas seolah-olah kamu melihat posting tersebut.` : ''}
 
 ${langGuidelines}
+${HUMAN_VOICE_GUIDE}
 ${EMOJI_QUALITY_GUIDE}
 ${modelHint}${modelConstraints}
 ${VIRAL_HOOK_STRATEGY}
@@ -328,6 +437,10 @@ ${MODEL_OUTPUT_GUARD}
 - Akhiri reply bait natural
 - TIDAK BOLEH ada kalimat generik, klise, atau template
 - TIDAK BOLEH pakai frasa formal/akademik
+- TIDAK BOLEH pola "bukan X, tapi Y" / "not just X, but Y", pembuka staging,
+  penutup satu baris yang mengulang poin, triad yang dipaksakan, atau klaim bombastis
+- HARUS ada SATU detail spesifik yang nyata (angka, tempat, kebiasaan konkret),
+  bukan klaim umum
 - ${videoUrl ? 'JANGAN lebih panjang dari 60 kata' : 'JANGAN kurang dari 120 kata atau lebih dari 150 kata'}
 
 TULIS ${maxCount} TWEET:`;
