@@ -50,9 +50,11 @@ const BOT_PATTERNS: Array<{ p: RegExp; r: string | ((_: string, p1: string, p2: 
   { p: /\b(Berdasarkan data|Menurut penelitian|Studi menunjukkan|Hasil riset membuktikan)\s*/gi, r: '' },
   { p: /\b(Dalam konteks ini|Pada akhirnya|Intinya adalah|Kesimpulannya)\s*/gi, r: '' },
   // Humanizer §4 — staged openers (di awal teks / awal paragraf). Dihapus karena
-  // kalimat sesudahnya sudah berdiri sendiri tanpa pengumuman.
-  { p: /(^|\n\n)(Yuk (kita )?bahas|Mari kita bahas|Tanpa (basa-basi|panjang lebar)|Jujur (ya|aja)|Dengar ya|Begini,|Jadi gini,)\s+/gim, r: '$1' },
-  { p: /(^|\n\n)(Let's dive in|Let's break this down|Here's the thing|Here's what you need to know|Real talk|Let's be honest|Look,|Honestly\?)\s+/gim, r: '$1' },
+  // kalimat sesudahnya sudah berdiri sendiri tanpa pengumuman. Pola juga
+  // memakan koma/dash yang mengikutinya ("Let's dive in — ..." / "Jujur ya, ...")
+  // supaya tidak tersisa tanda baca menggantung di awal teks.
+  { p: /(^|\n\n)(Yuk (kita )?bahas|Mari kita bahas|Tanpa (basa-basi|panjang lebar)|Jujur (ya|aja)|Dengar ya|Begini,|Jadi gini,)\s*(?:[—–]|,)?\s*/gim, r: '$1' },
+  { p: /(^|\n\n)(Let's dive in|Let's break this down|Here's the thing|Here's what you need to know|Real talk|Let's be honest|Look,|Honestly\?)\s*(?:[—–]|,)?\s*/gim, r: '$1' },
   // Humanizer §22 — chatbot residue (EN + ID).
   { p: /^(Of course!?|Certainly!?|Great question!?|You're absolutely right!?|Tentu!?|Tentu saja!?|Pertanyaan bagus!?)\s+/gim, r: '' },
   { p: /\s*(I hope this helps!?|Let me know if (you'd|you want)[^\n]*|Berikut (?:tweetnya|adalah)\s*:?|Here(?:'s| is)(?: a)? (?:tweet|an overview|a quick (?:look|overview))(?:[:.])?)\s*$/gim, r: '' },
@@ -75,37 +77,10 @@ const MODEL_OUTPUT_GUARD = `
 - Jangan menulis kalimat seperti "Saya akan membuatkan...", "Berikut tweetnya...", atau "Sebagai AI...".
 `;
 
-// Humanizer (blader/humanizer, SKILL.md v4.0.0, MIT) — panduan suara manusia.
-// Skill ini TIDAK mencoba lolos dari AI detector; tujuannya tulisan yang
-// terdengar seperti orang beneran, bukan template. Pola yang dilarang di sini
-// adalah pola yang bisa dikenali aturan (§1, §2, §4, §6, §8, §12, §13, §16, §22)
-// dan juga ditegakkan lagi oleh postProcess() di bawah.
-const HUMAN_VOICE_GUIDE = `
-🗣️ SUARA MANUSIA — TULIS SEPERTI ORANG, BUKAN TEMPLATE (humanizer §1-§22):
-- Satu detail spesifik yang nyata ("kopi sachet 3 ribuan di warung sebelah kantor")
-  selalu lebih manusiawi daripada klaim umum ("kopi adalah teman setia").
-- DILARANG pola "bukan X, tapi Y" / "not just X, but Y" ("bukan sekadar kopi, tapi
-  ritual pagi" / "It's not just a tool, it's a weapon"). Nyatakan langsung:
-  "Kopi pagi itu ritual gue."
-- DILARANG pembuka staging: "Yuk kita bahas", "Mari kita bahas", "Tanpa basa-basi",
-  "Jujur ya", "Let's dive in", "Here's the thing", "Real talk", "Let's be honest".
-  Langsung ke poin, tanpa pengumuman.
-- DILARANG penutup satu baris yang mengulang poin: "Itulah kuncinya.",
-  "Itulah intinya.", "That's the real win.", "Let that sink in." Akhiri dengan
-  pertanyaan yang benar-benar ingin dijawab, bukan kesimpulan yang diulang.
-- DILARANG daftar tiga serangkai yang dipaksakan ("cepat, murah, dan berkualitas"
-  kalau maknanya cuma satu). Satu contoh yang dikembangkan lebih baik dari tiga
-  contoh yang sejajar.
-- DILARANG klaim bombastis dan bahasa jualan: "game-changer", "revolusioner",
-  "mengubah segalanya", "wajib coba", "luar biasa", "groundbreaking", "must-visit".
-- DILARANG kata stok AI: delve, crucial, landscape, tapestry, showcase, underscore,
-  pivotal, meticulous, "mendalam", "krusial", "lanskap", "penting untuk dicatat".
-- DILARANG em dash (—) dan double hyphen (--). Pakai koma atau titik.
-- Variasikan panjang kalimat. Satu kalimat pendek boleh, tapi harus membawa fakta
-  baru, bukan mengulang kalimat sebelumnya.
-- Jangan menjelaskan latar yang sudah jelas dari topik/ide yang diberikan.
-  Pembaca sudah tahu konteksnya; langsung ke pendapat atau ceritanya.
-`;
+// postProcess() di bawah menegakkan lagi pola humanizer pada output model.
+// Panduan HUMAN_VOICE_GUIDE sendiri tinggal di providers.ts dan disuntikkan
+// oleh callAI() ke setiap pemanggilan model (semua provider) — gemini.ts tidak
+// lagi menyuntikkannya sendiri, supaya tidak terjadi duplikasi.
 
 // Humanizer §1 — "bukan X, tapi Y" / "not X, but Y", hanya bentuk sempit yang
 // aman ditulis ulang oleh aturan: diawali subjek + "bukan/not" dan dipisah koma.
@@ -315,7 +290,6 @@ export async function generateContent(opts: { topic?: string; language?: string;
 📌 TOPIK: ${topic}
 
 ${langGuidelines}
-${HUMAN_VOICE_GUIDE}
 ${EMOJI_QUALITY_GUIDE}
 ${modelHint}${modelConstraints}
 ${VIRAL_HOOK_STRATEGY}
@@ -411,7 +385,6 @@ ${videoUrl ? `🎯 MODE BALASAN LANGSUNG KE MEDIA:
 - Jangan menjelaskan bahwa kamu sedang menganalisis video; langsung balas seolah-olah kamu melihat posting tersebut.` : ''}
 
 ${langGuidelines}
-${HUMAN_VOICE_GUIDE}
 ${EMOJI_QUALITY_GUIDE}
 ${modelHint}${modelConstraints}
 ${VIRAL_HOOK_STRATEGY}
