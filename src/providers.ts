@@ -168,7 +168,7 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     icon: '✦',
     baseUrl: 'https://api.xingchiapi.com/v1',
     docs: 'https://xingchiapi.com/dashboard',
-    rateLimitNote: 'Gunakan API key Xingchi Anda. Ketersediaan alias model bergantung pada akun/gateway.',
+    rateLimitNote: '⚠️ Kebijakan Xingchi: hanya klien pemrograman resmi (Codex, Claude Code, Hermes Agent, Cursor, Cline, dll.) yang diizinkan. Aplikasi web pihak ketiga seperti Generator Post Agent DITOLAK oleh server Xingchi (client_not_allowed) — tes koneksi provider ini akan selalu gagal dari aplikasi ini, apa pun key-nya. Gunakan Xingchi lewat Hermes Agent / Claude Code di VPS, atau pakai provider lain di aplikasi ini.',
     models: [
       { id: 'gpt-6-astra', name: 'GPT-6 Astra', temperature: 0.9, maxTokens: 1600, strengths: ['creative', 'natural_id', 'reasoning', 'deep_reasoning', 'debate'], bestFor: 'Hook kuat, ide orisinal, opini tajam, dan konten kompleks.' },
       { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', temperature: 0.85, maxTokens: 1400, strengths: ['creative', 'natural_id', 'reasoning'], bestFor: 'Generator post harian dengan keseimbangan kualitas dan biaya.' },

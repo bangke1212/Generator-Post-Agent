@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       return res.status(403).json({
         error: {
           code: 'XINGCHI_CLIENT_NOT_SUPPORTED',
-          message: 'Xingchi menolak aplikasi Generator Post Agent karena hanya mengizinkan klien pemrograman resminya (mis. Codex, Claude Code, Cursor, Cline). Integrasi aplikasi pihak ketiga seperti ini belum diizinkan oleh Xingchi. Gunakan penyedia API lain di aplikasi ini atau minta Xingchi membuka akses OpenAI-compatible untuk aplikasi pihak ketiga.'
+          message: 'Xingchi menolak aplikasi Generator Post Agent karena hanya mengizinkan klien pemrograman resminya (Codex, Claude Code, Hermes Agent, Cursor, Cline, dll.). Integrasi aplikasi pihak ketiga seperti ini belum diizinkan oleh Xingchi. Gunakan Xingchi lewat klien resmi tersebut (mis. Hermes Agent / Claude Code di VPS kamu), gunakan penyedia API lain di aplikasi ini, atau minta Xingchi membuka akses OpenAI-compatible untuk aplikasi pihak ketiga.'
         }
       });
     }

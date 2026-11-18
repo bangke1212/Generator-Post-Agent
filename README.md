@@ -82,7 +82,9 @@ Xingchi image models verified against the live catalogue (2026-11-18): `gpt-imag
 
 To use it: save your Xingchi key in **AI Providers → Xingchi AI**, open **Text to Image**, choose **Xingchi AI · gpt-image** as the image provider, pick a model, write a prompt, and click **Generate Image**. Paid models are billed to your Xingchi balance at your key group's rate.
 
-**Xingchi policy note:** Xingchi is known to refuse traffic from third-party apps (it allows its official programming clients such as Codex, Claude Code, Cursor, and Cline). If Xingchi applies that policy to image requests from this app, the proxy surfaces Xingchi's refusal as a clear `XINGCHI_CLIENT_NOT_SUPPORTED` message instead of a generic failure — the CrowLLM image provider remains available as the alternative.
+**Xingchi policy notes (verified live, 2026-11-18):**
+- **Chat:** Xingchi only allows official programming clients — Codex, Claude Code, OpenCode, ZCode, DeepSeek Harness, Hermes Agent, Minis, WorkBuddy, Cursor, pi/omp, Qoder, Kilo, Cline, Roo, Trae, GitHub Copilot, Grok CLI. Scripts, SDK direct connections, and third-party chat clients (including this app) are refused with `client_not_allowed`, so the Xingchi connection test in Settings always fails from this app regardless of the key. Use Xingchi from a whitelisted client (e.g. Hermes Agent or Claude Code on your own machine/VPS), or use another provider here. If Xingchi applies the same policy to image requests, the proxy surfaces it as a clear `XINGCHI_CLIENT_NOT_SUPPORTED` message instead of a generic failure — the CrowLLM image provider remains available as the alternative.
+- **Images:** the `gpt-image` models can be visible in a key's catalogue while image generation is disabled for that key's group (the `GPT Charity` group behaves this way). Xingchi then answers `Image generation is not enabled for this group`; the proxy surfaces this as `XINGCHI_IMAGE_NOT_ENABLED` with guidance. Fix it on Xingchi's side: ask Xingchi to enable image generation for your key's group, or use a key from a group with image access.
 
 ## 📁 Project Structure
 
