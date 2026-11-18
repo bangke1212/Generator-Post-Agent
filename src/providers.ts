@@ -1,6 +1,6 @@
 // Multi-provider AI — Vite client-side (no backend)
 // X Algorithm 2026 — All-timeline coverage optimization
-// 7 Providers · 29+ Models
+// 8 Providers · 39 Models
 
 import OpenAI from 'openai';
 
@@ -174,6 +174,18 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', temperature: 0.85, maxTokens: 1400, strengths: ['creative', 'natural_id', 'reasoning'], bestFor: 'Generator post harian dengan keseimbangan kualitas dan biaya.' },
       { id: 'gpt-6-sol', name: 'GPT-6 Sol', temperature: 0.85, maxTokens: 1400, strengths: ['creative', 'natural_id', 'reasoning'], bestFor: 'Alternatif serbaguna untuk ide dan post.' },
       { id: 'gpt-6-luna', name: 'GPT-6 Luna', temperature: 0.8, maxTokens: 1000, strengths: ['natural_id', 'creative'], bestFor: 'Draft singkat dan penggunaan rutin.' },
+    ],
+  },
+  numes: {
+    name: 'Numes AI',
+    icon: '🆓',
+    baseUrl: 'https://api.numes.ai/api/v1',
+    docs: 'https://numes.ai/dashboard/keys',
+    rateLimitNote: '✅ GRATIS! Model uncensored gratis di Numes. Buat API key di numes.ai/dashboard/keys (mata uang USD). Dipanggil lewat proxy Vercel /api/numes karena Numes menolak request browser langsung.',
+    models: [
+      { id: 'glm-5.3-uncensored', name: '🆓 GLM 5.3 Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+      { id: 'glm-5.3-flash-uncensored', name: '🆓 GLM 5.3 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast'], bestFor: 'Versi cepat GLM 5.3 uncensored; tinjau hasilnya.' },
+      { id: 'deepseek-v4.1-flash-uncensored', name: '🆓 DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
     ],
   },
   custom: {
@@ -373,6 +385,47 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     const content = data?.choices?.[0]?.message?.content;
     if (typeof content !== 'string' || !content.trim()) {
       throw new Error('Xingchi merespons tanpa teks. Periksa model dan format respons API.');
+    }
+    return { content, provider: preset.name, model };
+  }
+
+  // Numes is called through a same-origin Vercel function: Numes rejects
+  // browser requests from third-party origins (403 cors_forbidden), so a
+  // direct OpenAI-compatible call from the frontend cannot work.
+  if (provider === 'numes') {
+    let response: Response;
+    try {
+      response = await fetch('/api/numes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey,
+          model,
+          prompt: guidedPrompt,
+          videoUrl: resolved.mediaUrl,
+          mediaType: resolved.mediaType,
+          maxTokens: maxTokens || optimal.maxTokens,
+          temperature: temperature ?? optimal.temperature,
+        }),
+      });
+    } catch {
+      throw new Error('Tidak dapat menghubungi backend Vercel (/api/numes). Pastikan deployment terbaru sudah selesai.');
+    }
+
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error('Backend Numes mengembalikan respons tidak valid (HTTP ' + response.status + '). Periksa deployment fungsi Vercel.');
+    }
+    if (!response.ok) {
+      throw new Error(data?.error?.message || 'Numes API gagal (HTTP ' + response.status + ')');
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      throw new Error('Numes merespons tanpa teks. Periksa model dan format respons API.');
     }
     return { content, provider: preset.name, model };
   }
