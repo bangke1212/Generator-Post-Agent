@@ -1,6 +1,6 @@
 // Multi-provider AI — Vite client-side (no backend)
 // X Algorithm 2026 — All-timeline coverage optimization
-// 8 Providers · 39 Models
+// 8 Providers · 45 Models
 
 import OpenAI from 'openai';
 
@@ -183,11 +183,17 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
     icon: '🆓',
     baseUrl: 'https://api.numes.ai/api/v1',
     docs: 'https://numes.ai/dashboard/keys',
-    rateLimitNote: '✅ GRATIS! Model uncensored gratis di Numes. Buat API key di numes.ai/dashboard/keys (mata uang USD). Dipanggil lewat proxy Vercel /api/numes karena Numes menolak request browser langsung.',
+    rateLimitNote: '✅ GRATIS! 9 model gratis di Numes (harga $0 input & output). Buat API key di numes.ai/dashboard/keys (mata uang USD). Dipanggil lewat proxy Vercel /api/numes karena Numes menolak request browser langsung.',
     models: [
-      { id: 'z-ai/glm-5.3-uncensored', name: '🆓 GLM 5.3 Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
-      { id: 'z-ai/glm-5.3-flash-uncensored', name: '🆓 GLM 5.3 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast'], bestFor: 'Versi cepat GLM 5.3 uncensored; tinjau hasilnya.' },
-      { id: 'deepseek/deepseek-v4.1-flash-uncensored', name: '🆓 DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+      { id: 'dealignai/glm-5.3-uncensored-fp8:free', name: '🆓 GLM 5.3 Uncensored FP8', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+      { id: 'dealignai/glm-5.3-flash-uncensored-fp8:free', name: '🆓 GLM 5.3 Flash Uncensored FP8', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast'], bestFor: 'Versi cepat GLM 5.3 uncensored; tinjau hasilnya.' },
+      { id: 'dealignai/deepseek-v4.1-flash-uncensored-fp8:free', name: '🆓 DeepSeek V4.1 Flash Uncensored FP8', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat tanpa penyaring tertentu; tinjau hasilnya.' },
+      { id: 'z-ai/glm-5.3:free', name: '🆓 GLM 5.3', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model flagship Z.ai untuk coding dan agen.' },
+      { id: 'z-ai/glm-5.3-flash:free', name: '🆓 GLM 5.3 Flash', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast'], bestFor: 'Versi cepat dan efisien GLM 5.3.' },
+      { id: 'deepseek/deepseek-v4.1-flash:free', name: '🆓 DeepSeek V4.1 Flash', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model chat DeepSeek yang cepat.' },
+      { id: 'moonshotai/kimi-k3.1-pro:free', name: '🆓 Kimi K3.1 Pro', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model pro dari Moonshot AI.' },
+      { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', name: '🆓 Nemotron 3 Ultra', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model besar NVIDIA untuk tugas kompleks.' },
+      { id: 'uniboshi/kimi-k3-abliterated-v1:free', name: '🆓 Kimi K3 Abliterated', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Varian Kimi K3 yang penolakannya dihilangkan; tinjau hasilnya.' },
     ],
   },
   custom: {
