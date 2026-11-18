@@ -46,6 +46,8 @@ export const CROWLLM_FREE_MODELS: ModelConfig[] = [
   { id: 'nvidia/nemotron-3.5-bolt-e4b:free', name: 'NVIDIA Nemotron 3.5 Bolt E4B', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat gratis pilihan.' },
   { id: 'nvidia/nemotron-3.5-super-vl-120b-a12b:free', name: 'NVIDIA Nemotron 3.5 Super VL 120B A12B', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'vision', 'multimodal'], bestFor: 'Analisis visual multimodal dengan model besar.' },
   { id: 'deepseek-v4.1-flash-uncensored:free', name: 'DeepSeek V4.1 Flash Uncensored', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat'], bestFor: 'Model chat dengan output tanpa penyaring tertentu; tinjau hasilnya.' },
+  { id: 'nemotron-3-ultra-550b-a55b:free', name: 'Nemotron 3 Ultra 550B', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'deep_reasoning'], bestFor: 'Model reasoning besar untuk analisis mendalam dan debat.' },
+  { id: 'gpt-4.1-mini:free', name: 'GPT-4.1 Mini', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'fast', 'creative'], bestFor: 'Chat cepat, natural, dan serbaguna untuk post harian.' },
 ];
 
 export interface CrowllmCatalogResult {
