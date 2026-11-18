@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getAllApiKeys } from '../store';
+import { postProcess } from '../gemini';
 
 interface Props { onTabChange: (tab: string) => void; }
 interface ImageModel { id: string; name?: string; free?: boolean; }
@@ -145,7 +146,9 @@ export default function ImageGenerate({ onTabChange }: Props) {
     try {
       const result = await crowllmRequest({ action: 'enhance_image_prompt', apiKey, model: promptModel, prompt });
       if (typeof result.prompt !== 'string' || !result.prompt.trim()) throw new Error('Model tidak menghasilkan prompt yang valid.');
-      setPrompt(result.prompt.trim());
+      // Jalur ini tidak lewat callAI, jadi bersihkan pola AI di sini — sama
+      // seperti semua teks hasil model lain yang tampil ke user.
+      setPrompt(postProcess(result.prompt.trim()));
     } catch (e: any) {
       setError(e.message || 'Gagal menyusun prompt.');
     } finally {
@@ -173,7 +176,7 @@ export default function ImageGenerate({ onTabChange }: Props) {
       } else {
         throw new Error(`${providerLabel} berhasil merespons, tetapi tidak mengirim URL atau data gambar yang dikenali.`);
       }
-      setRevisedPrompt(typeof image?.revised_prompt === 'string' ? image.revised_prompt : '');
+      setRevisedPrompt(typeof image?.revised_prompt === 'string' && image.revised_prompt.trim() ? postProcess(image.revised_prompt) : '');
       setResultModel(model);
     } catch (e: any) {
       setError(e.message || 'Gagal membuat gambar.');
