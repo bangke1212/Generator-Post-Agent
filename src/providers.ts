@@ -1,6 +1,6 @@
 // Multi-provider AI — Vite client-side (no backend)
 // X Algorithm 2026 — All-timeline coverage optimization
-// 8 Providers · 45 Models
+// 9 Providers · 48 Models
 
 import OpenAI from 'openai';
 
@@ -194,6 +194,18 @@ export const PROVIDER_PRESETS: Record<string, ProviderConfig> = {
       { id: 'moonshotai/kimi-k3.1-pro:free', name: '🆓 Kimi K3.1 Pro', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model pro dari Moonshot AI.' },
       { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', name: '🆓 Nemotron 3 Ultra', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Model besar NVIDIA untuk tugas kompleks.' },
       { id: 'uniboshi/kimi-k3-abliterated-v1:free', name: '🆓 Kimi K3 Abliterated', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning'], bestFor: 'Varian Kimi K3 yang penolakannya dihilangkan; tinjau hasilnya.' },
+    ],
+  },
+  dahl: {
+    name: 'Dahl Inference',
+    icon: '🌸',
+    baseUrl: 'https://inference.dahl.global/v1',
+    docs: 'https://inference.dahl.global/',
+    rateLimitNote: '✅ GRATIS! 100 juta token gratis untuk akun baru (lalu $0,02 per 1 juta token). Dipanggil lewat proxy Vercel /api/dahl karena Dahl memblokir request non-browser (Cloudflare). Daftar model bisa berotasi — cek GET /v1/models. Prompt diproses GPU operator jaringan Gonka, tanpa janji zero-retention: jangan kirim data sensitif.',
+    models: [
+      { id: 'MiniMaxAI/MiniMax-M2.7', name: '🆓 MiniMax M2.7 ⭐', free: true, recommended: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'coding', 'reasoning'], bestFor: 'Model default Dahl — chat dan coding.' },
+      { id: 'deepseek-ai/DeepSeek-V4-Flash-0731', name: '🆓 DeepSeek V4 Flash', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'coding', 'reasoning'], bestFor: 'Coding cepat, reasoning, dan agen.' },
+      { id: 'zai-org/GLM-5.3-Flash', name: '🆓 GLM 5.3 Flash', free: true, temperature: 0.82, maxTokens: 1400, strengths: ['chat', 'reasoning', 'fast'], bestFor: 'Model umum cepat dengan reasoning.' },
     ],
   },
   custom: {
@@ -434,6 +446,47 @@ export async function callAI(params: GenerateParams): Promise<{ content: string;
     const content = data?.choices?.[0]?.message?.content;
     if (typeof content !== 'string' || !content.trim()) {
       throw new Error('Numes merespons tanpa teks. Periksa model dan format respons API.');
+    }
+    return { content, provider: preset.name, model };
+  }
+
+  // Dahl is called through a same-origin Vercel function: Dahl blocks
+  // non-browser requests (Cloudflare, 403 browser_check_failed), so a
+  // direct OpenAI-compatible call from the frontend is unreliable.
+  if (provider === 'dahl') {
+    let response: Response;
+    try {
+      response = await fetch('/api/dahl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey,
+          model,
+          prompt: guidedPrompt,
+          videoUrl: resolved.mediaUrl,
+          mediaType: resolved.mediaType,
+          maxTokens: maxTokens || optimal.maxTokens,
+          temperature: temperature ?? optimal.temperature,
+        }),
+      });
+    } catch {
+      throw new Error('Tidak dapat menghubungi backend Vercel (/api/dahl). Pastikan deployment terbaru sudah selesai.');
+    }
+
+    const raw = await response.text();
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      throw new Error('Backend Dahl mengembalikan respons tidak valid (HTTP ' + response.status + '). Periksa deployment fungsi Vercel.');
+    }
+    if (!response.ok) {
+      throw new Error(data?.error?.message || 'Dahl API gagal (HTTP ' + response.status + ')');
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== 'string' || !content.trim()) {
+      throw new Error('Dahl merespons tanpa teks. Periksa model dan format respons API.');
     }
     return { content, provider: preset.name, model };
   }
